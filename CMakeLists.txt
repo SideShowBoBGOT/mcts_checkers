@@ -5,7 +5,12 @@ set(CMAKE_CXX_STANDARD 20)
 
 add_subdirectory(external)
 
-add_executable(${PROJECT_NAME} main.cpp)
+add_executable(${PROJECT_NAME} main.cpp
+        include/mcts_checkers/utils.hpp
+        include/mcts_checkers/game/state.hpp
+        src/game/state.cpp
+)
+target_include_directories(${PROJECT_NAME} PUBLIC include)
 target_link_libraries(${PROJECT_NAME}
         PUBLIC
         ImGui-SFML::ImGui-SFML
