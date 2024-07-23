@@ -1,0 +1,68 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"install",
+			"sfml_add_library"
+		],
+		"files" : 
+		[
+			"external/SFML/cmake/Macros.cmake",
+			"external/SFML/src/SFML/Network/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 1
+			},
+			{
+				"command" : 1,
+				"file" : 1,
+				"line" : 48,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 197,
+				"parent" : 1
+			}
+		]
+	},
+	"installers" : 
+	[
+		{
+			"backtrace" : 2,
+			"component" : "bin",
+			"destination" : "lib",
+			"paths" : 
+			[
+				"external/SFML/lib/libsfml-network-d.so.2.6.1",
+				"external/SFML/lib/libsfml-network-d.so.2.6"
+			],
+			"targetId" : "sfml-network::@672e1b0d94f8633b57c2",
+			"targetIndex" : 4,
+			"targetInstallNamelink" : "skip",
+			"type" : "target"
+		},
+		{
+			"backtrace" : 2,
+			"component" : "bin",
+			"destination" : "lib",
+			"paths" : 
+			[
+				"external/SFML/lib/libsfml-network-d.so"
+			],
+			"targetId" : "sfml-network::@672e1b0d94f8633b57c2",
+			"targetIndex" : 4,
+			"targetInstallNamelink" : "only",
+			"type" : "target"
+		}
+	],
+	"paths" : 
+	{
+		"build" : "external/SFML/src/SFML/Network",
+		"source" : "external/SFML/src/SFML/Network"
+	}
+}

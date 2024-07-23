@@ -1,0 +1,88 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"install"
+		],
+		"files" : 
+		[
+			"external/imgui-sfml/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 127,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 135,
+				"parent" : 0
+			}
+		]
+	},
+	"installers" : 
+	[
+		{
+			"backtrace" : 1,
+			"component" : "Unspecified",
+			"destination" : "lib",
+			"paths" : 
+			[
+				"external/imgui-sfml/libImGui-SFML_d.so"
+			],
+			"targetId" : "ImGui-SFML::@293a5516367d07993a85",
+			"targetIndex" : 0,
+			"type" : "target"
+		},
+		{
+			"backtrace" : 1,
+			"component" : "Unspecified",
+			"destination" : "include",
+			"paths" : 
+			[
+				"external/imgui-sfml/imgui-SFML.h",
+				"external/imgui-sfml/imgui-SFML_export.h",
+				"external/imgui/imconfig.h",
+				"external/imgui/imgui.h",
+				"external/imgui/imgui_internal.h",
+				"external/imgui/imstb_rectpack.h",
+				"external/imgui/imstb_textedit.h",
+				"external/imgui/imstb_truetype.h",
+				"external/imgui/misc/cpp/imgui_stdlib.h",
+				"external/imgui-sfml/imconfig-SFML.h"
+			],
+			"type" : "file"
+		},
+		{
+			"backtrace" : 2,
+			"component" : "Unspecified",
+			"destination" : "lib/cmake/ImGui-SFML",
+			"exportName" : "ImGui-SFML",
+			"exportTargets" : 
+			[
+				{
+					"id" : "ImGui-SFML::@293a5516367d07993a85",
+					"index" : 0
+				}
+			],
+			"paths" : 
+			[
+				"external/imgui-sfml/CMakeFiles/Export/761a6a4c7704629aea6d1d08969b2ac8/ImGui-SFMLConfig.cmake"
+			],
+			"type" : "export"
+		}
+	],
+	"paths" : 
+	{
+		"build" : "external/imgui-sfml",
+		"source" : "external/imgui-sfml"
+	}
+}
