@@ -9,6 +9,7 @@ add_executable(${PROJECT_NAME} main.cpp
         include/mcts_checkers/utils.hpp
         include/mcts_checkers/game/state.hpp
         src/game/state.cpp
+        include/mcts_checkers/game/player_turn/state.hpp
 )
 target_include_directories(${PROJECT_NAME} PUBLIC include)
 target_link_libraries(${PROJECT_NAME}

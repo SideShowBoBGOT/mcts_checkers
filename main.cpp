@@ -1,7 +1,6 @@
 #include <mcts_checkers/game/state.hpp>
 
 int main() {
-    auto game = mcts_checkers::game::State{};
-    game.loop();
+    mcts_checkers::game::loop();
     return 0;
 }

@@ -7,14 +7,6 @@ namespace sf {
 
 namespace mcts_checkers::game {
 
-    class State {
-        public:
-            State();
-            ~State();
-            void loop();
-
-        private:
-            std::unique_ptr<sf::RenderWindow> m_window;
-    };
+    void loop();
 
 }

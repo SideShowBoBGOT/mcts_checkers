@@ -3,8 +3,8 @@
 #include <SFML/Window/Event.hpp>
 #include <SFML/Graphics/RenderWindow.hpp>
 
-
 #include <imgui-SFML.h>
+#include <imgui.h>
 #include <array>
 
 namespace mcts_checkers::game {
@@ -41,42 +41,7 @@ namespace mcts_checkers::game {
 
     static const auto CELLS = create_white_black_cells();
 
-
-
-    State::State()
-        : m_window{std::make_unique<sf::RenderWindow>(WINDOW_SIZE, "mcts_checkers")} {
-        m_window->setFramerateLimit(FRAME_RATE);
-        if(not ImGui::SFML::Init(*m_window)) {
-            std::printf("Failed to init window\n");
-            std::terminate();
-        }
-    }
-
-    State::~State() {
-        ImGui::SFML::Shutdown();
-    }
-
-    void State::loop() {
-
-    }
-
-    // sf::RenderWindow window(WINDOW_SIZE, "mcts_checkers");
-    // window.setFramerateLimit(FRAME_RATE);
-    //
-
-    //
-    // while(window.isOpen()) {
-    //     // handle_events(window);
-    //
-    //     window.clear();
-    //     // draw(window);
-    //
-    //     window.display();
-    // }
-    //
-    //
-
-    void State::handle_events(sf::RenderWindow& window) {
+    void handle_events(sf::RenderWindow& window) {
         auto event = sf::Event{};
         while(window.pollEvent(event)) {
             ImGui::SFML::ProcessEvent(window, event);
@@ -92,10 +57,32 @@ namespace mcts_checkers::game {
         }
     }
 
-    void State::draw(sf::RenderWindow& window) {
+    void draw(sf::RenderWindow& window) {
         for(const auto& cell : CELLS) {
             window.draw(cell);
         }
     }
+
+    void loop() {
+        auto window = sf::RenderWindow(WINDOW_SIZE, "mcts_checkers");
+        window.setFramerateLimit(FRAME_RATE);
+
+        if(not ImGui::SFML::Init(window)) {
+            std::printf("Failed to init window\n");
+            std::terminate();
+        }
+
+        while(window.isOpen()) {
+            handle_events(window);
+            window.clear();
+            draw(window);
+            window.display();
+        }
+
+
+        ImGui::SFML::Shutdown();
+    }
+
+
 
 }
