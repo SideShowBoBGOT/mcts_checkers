@@ -18,5 +18,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC include)
 target_link_libraries(${PROJECT_NAME}
         PUBLIC
         ImGui-SFML::ImGui-SFML
+        tl::expected
+        tl::optional
 )
 target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Werror)

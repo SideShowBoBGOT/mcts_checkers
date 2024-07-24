@@ -10,3 +10,9 @@
 	path = external/imgui-sfml
 	url = https://github.com/SFML/imgui-sfml
 	branch = 2.6.x
+[submodule "external/expected"]
+	path = external/expected
+	url = https://github.com/TartanLlama/expected
+[submodule "external/optional"]
+	path = external/optional
+	url = https://github.com/TartanLlama/optional

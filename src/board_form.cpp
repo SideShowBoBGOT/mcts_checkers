@@ -10,6 +10,7 @@ namespace mcts_checkers {
     static constexpr uint8_t BOARD_CELLS_COUNT = BOARD_SIDE_CELLS_COUNT * BOARD_SIDE_CELLS_COUNT;
     static const auto BLACK_COLOR = ImGui::ColorConvertFloat4ToU32(ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
     static const auto WHITE_COLOR = ImGui::ColorConvertFloat4ToU32(ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+    static const auto BLUE_COLOR = ImGui::ColorConvertFloat4ToU32(ImVec4(0.0f, 0.0f, 1.0f, 1.0f));
 
     static ImVec2 calc_cell_size() {
         return ImGui::GetWindowSize() / BOARD_SIDE_CELLS_COUNT;
@@ -41,15 +42,33 @@ namespace mcts_checkers {
     }
 
     void draw_hovered_cell() {
-        if(not ImGui::IsWindowHovered()) return;
+        if(not ImGui::IsWindowHovered(ImGuiHoveredFlags_None)) return;
 
-        calc_mouse_local_window_pos()
+        const auto mouse_pos = calc_mouse_local_window_pos();
+        // std::printf("Mouse pos: (%f, %f)\n", mouse_pos.x, mouse_pos.y);
+
+        const auto cell_size = calc_cell_size();
+        const auto float_cell_index = mouse_pos / cell_size;
+        const auto cell_index = ImVec2(
+            static_cast<short>(float_cell_index.x),
+            static_cast<short>(float_cell_index.y)
+        );
+
+        const auto p_min = cell_size * cell_index;
+        const auto p_max = p_min + cell_size;
+
+        const auto form_pos = ImGui::GetCursorScreenPos();
+
+        const auto real_p_min = p_min + form_pos;
+        const auto real_p_max = p_max + form_pos;
+        ImGui::GetWindowDrawList()->AddRect(real_p_min, real_p_max, BLUE_COLOR, 2, 0, 8);
     }
 
     void BoardForm::iter() {
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
         ImGui::BeginChild("BoardForm", ImVec2(0, -1), true, ImGuiWindowFlags_NoScrollWithMouse);
-
+        draw_rects();
+        draw_hovered_cell();
         ImGui::EndChild();
         ImGui::PopStyleVar();
 
