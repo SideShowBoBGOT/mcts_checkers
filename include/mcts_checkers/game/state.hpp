@@ -5,7 +5,7 @@ namespace sf {
     class RenderWindow;
 }
 
-namespace mcts_checkers::game {
+namespace mcts_checkers {
 
     void loop();
 
