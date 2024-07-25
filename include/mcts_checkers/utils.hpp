@@ -5,6 +5,15 @@
 namespace mcts_checkers {
 
     namespace utils {
+        template <typename T>
+        decltype(auto) checked_move(T&& arg) noexcept {
+            using unreferenced_t = std::remove_reference_t<T>;
+            static_assert(std::is_move_constructible_v<unreferenced_t>, "T must be move constructible");
+            static_assert(std::is_move_assignable_v<unreferenced_t>, "T must be move assignable");
+            static_assert(not std::is_const_v<unreferenced_t>, "T must not be const");
+            return static_cast<unreferenced_t&&>(arg);
+        }
+
         template<class... Ts>
         struct overloaded : Ts... { using Ts::operator()...; };
 

@@ -1,10 +1,10 @@
 #include <mcts_checkers/board_form.hpp>
 #include <mcts_checkers/utils.hpp>
-#include <cstdio>
+#include <mcts_checkers/checkers_data.hpp>
 
-namespace mcts_checkers {
+namespace mcts_checkers::board_form {
 
-    BoardForm::BoardForm()=default;
+    Form::Form()=default;
 
     static constexpr uint8_t BOARD_SIDE_CELLS_COUNT = 10;
     static constexpr uint8_t BOARD_CELLS_COUNT = BOARD_SIDE_CELLS_COUNT * BOARD_SIDE_CELLS_COUNT;
@@ -64,14 +64,33 @@ namespace mcts_checkers {
         ImGui::GetWindowDrawList()->AddRect(real_p_min, real_p_max, BLUE_COLOR, 2, 0, 8);
     }
 
-    void BoardForm::iter() {
+    void StateUnselected::iter(const ProtocolStateChanger<Form> state_changer, const CheckersData& checkers_data) {
+
+    }
+
+    void StateSelected::iter(const ProtocolStateChanger<Form> state_changer, const CheckersData& checkers_data) {
+
+    }
+
+    void StateSelectionConfirmed::iter(const ProtocolStateChanger<Form> state_changer, const CheckersData& checkers_data) {
+
+    }
+
+    void Form::iter(const CheckersData& checkers_data) {
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
         ImGui::BeginChild("BoardForm", ImVec2(0, -1), true, ImGuiWindowFlags_NoScrollWithMouse);
-        draw_rects();
-        draw_hovered_cell();
+
+
+        std::visit([this, &checkers_data](const auto& state) {
+            state.iter(*this, checkers_data);
+        }, m_state);
+
         ImGui::EndChild();
         ImGui::PopStyleVar();
+    }
 
+    void Form::change_state(State&& state) {
+        m_state = utils::checked_move(state);
     }
 
 }
