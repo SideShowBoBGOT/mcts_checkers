@@ -14,12 +14,22 @@ add_executable(${PROJECT_NAME} main.cpp
         src/board_form.cpp
         src/statistic_form.cpp
         include/mcts_checkers/checkers_data.hpp
+        src/checkers_data.cpp
 )
 target_include_directories(${PROJECT_NAME} PUBLIC include)
 target_link_libraries(${PROJECT_NAME}
         PUBLIC
         ImGui-SFML::ImGui-SFML
-        tl::expected
-        tl::optional
+#        tl::expected
+#        tl::optional
 )
-target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Werror)
+
+target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra)
+
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
+    target_compile_options(${PROJECT_NAME} PRIVATE -Werror)
+else()
+    message(FATAL_ERROR "Unsupported build type: ${CMAKE_BUILD_TYPE}")
+endif()
+

@@ -65,7 +65,7 @@ namespace mcts_checkers::board_form {
     }
 
     void StateUnselected::iter(const ProtocolStateChanger<Form> state_changer, const CheckersData& checkers_data) {
-
+        draw_hovered_cell();
     }
 
     void StateSelected::iter(const ProtocolStateChanger<Form> state_changer, const CheckersData& checkers_data) {
@@ -76,12 +76,20 @@ namespace mcts_checkers::board_form {
 
     }
 
+    // struct StateIterVisitor {
+    //     void operator()(State&& state) {
+    //     }
+    //
+    //     Form& m_form;
+    //     const CheckersData& m_checkers_data;
+    // };
+
     void Form::iter(const CheckersData& checkers_data) {
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
         ImGui::BeginChild("BoardForm", ImVec2(0, -1), true, ImGuiWindowFlags_NoScrollWithMouse);
+        draw_rects();
 
-
-        std::visit([this, &checkers_data](const auto& state) {
+        std::visit([this, &checkers_data](auto& state) {
             state.iter(*this, checkers_data);
         }, m_state);
 

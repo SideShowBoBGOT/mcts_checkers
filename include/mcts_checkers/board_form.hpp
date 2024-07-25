@@ -14,9 +14,9 @@ namespace mcts_checkers::board_form {
         public:
             ProtocolStateChanger(T& obj) : m_obj{obj} {}
 
-            template<typename State>
-            void change_state(State&& new_state) const {
-                m_obj.change_state(std::forward<State>(new_state));
+            template<typename StateType>
+            void change_state(StateType&& new_state) const {
+                m_obj.change_state(std::forward<StateType>(new_state));
             }
 
         private:
@@ -43,7 +43,7 @@ namespace mcts_checkers::board_form {
             void iter(const CheckersData& checkers_data);
             void change_state(State&& state);
 
-        State m_state;
+        State m_state = StateUnselected{};
     };
 
 }
