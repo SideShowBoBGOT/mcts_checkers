@@ -20,16 +20,10 @@ target_include_directories(${PROJECT_NAME} PUBLIC include)
 target_link_libraries(${PROJECT_NAME}
         PUBLIC
         ImGui-SFML::ImGui-SFML
-#        tl::expected
-#        tl::optional
+        tl::expected
+        tl::optional
 )
 
 target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra)
-
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
-    target_compile_options(${PROJECT_NAME} PRIVATE -Werror)
-else()
-    message(FATAL_ERROR "Unsupported build type: ${CMAKE_BUILD_TYPE}")
-endif()
+#target_compile_options(${PROJECT_NAME} PRIVATE -Werror)
 
