@@ -15,6 +15,7 @@ add_executable(${PROJECT_NAME} main.cpp
         src/statistic_form.cpp
         include/mcts_checkers/checkers_data.hpp
         src/checkers_data.cpp
+        include/mcts_checkers/mcts.hpp
 )
 target_include_directories(${PROJECT_NAME} PUBLIC include)
 target_link_libraries(${PROJECT_NAME}

@@ -12,6 +12,7 @@ namespace mcts_checkers {
         std::bitset<CHEKCERS_CELLS_COUNT> m_player_index;
         std::bitset<CHEKCERS_CELLS_COUNT> m_is_in_place;
         std::bitset<CHEKCERS_CELLS_COUNT> m_is_king;
+        std::bitset<CHEKCERS_CELLS_COUNT> m_is_done_first_move;
         bool m_current_player_index = false;
     };
 

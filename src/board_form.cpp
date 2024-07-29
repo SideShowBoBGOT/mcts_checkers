@@ -7,17 +7,24 @@ namespace mcts_checkers::board_form {
 
     Form::Form()=default;
 
+    static consteval ImVec4 normalize_rgba_color(const ImVec4 vec) {
+        return {vec.x / 255, vec.y / 255, vec.z / 255, vec.w / 255};
+    }
+
     static const auto BLACK_COLOR = ImGui::ColorConvertFloat4ToU32(ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
     static const auto WHITE_COLOR = ImGui::ColorConvertFloat4ToU32(ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+    static const auto GREY_COLOR = ImGui::ColorConvertFloat4ToU32(ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
 
     static const auto BLUE_COLOR = ImGui::ColorConvertFloat4ToU32(ImVec4(0.0f, 0.0f, 1.0f, 1.0f));
-    static const auto RED_COLOR = ImGui::ColorConvertFloat4ToU32(ImVec4(1.0f, 0.0f, 0.0f, 1.0f));
+    // static const auto RED_COLOR = ImGui::ColorConvertFloat4ToU32(ImVec4(1.0f, 0.0f, 0.0f, 1.0f));
     static const auto YELLOW_COLOR = ImGui::ColorConvertFloat4ToU32(ImVec4(1.0f, 1.0f, 0.0f, 1.0f));
     static const auto GREEN_COLOR = ImGui::ColorConvertFloat4ToU32(ImVec4(0.0f, 153.f / 255, 0.0f, 1.0f));
 
-    static const auto PLAYER_ONE_PAWN_COLOR = RED_COLOR;
-    static const auto PLAYER_TWO_PAWN_COLOR = BLUE_COLOR;
-    static const auto KING_HAT_COLOR = WHITE_COLOR;
+    static const auto BOARD_CELL_ONE_COLOR = ImGui::ColorConvertFloat4ToU32(normalize_rgba_color({217.0f, 182.f, 140.0f, 255.0f}));
+    static const auto BOARD_CELL_TWO_COLOR = ImGui::ColorConvertFloat4ToU32(normalize_rgba_color({188.0f, 117.f, 65.0f, 255.0f}));
+    static const auto PLAYER_ONE_PAWN_COLOR = WHITE_COLOR;
+    static const auto PLAYER_TWO_PAWN_COLOR = BLACK_COLOR;
+    static const auto KING_HAT_COLOR = GREY_COLOR;
 
     static ImVec2 calc_cell_size() {
         return ImGui::GetWindowSize() / BOARD_SIDE_CELL_COUNT;
@@ -119,7 +126,7 @@ namespace mcts_checkers::board_form {
             for(uint16_t x = 0; x < BOARD_SIDE_CELL_COUNT; ++x) {
                 const auto deviation = ImVec2{dev_x, dev_y};
                 draw_list->AddRectFilled(
-                    deviation, deviation + cell_size, is_white ? WHITE_COLOR : BLACK_COLOR
+                    deviation, deviation + cell_size, is_white ? BOARD_CELL_ONE_COLOR : BOARD_CELL_TWO_COLOR
                 );
                 is_white = not is_white;
                 dev_x += cell_size.x;
