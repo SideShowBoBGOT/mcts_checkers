@@ -51,8 +51,12 @@ namespace mcts_checkers {
         };
     }
 
-    constexpr uint8_t convert_board_vector_to_checker_index(const Vector<uint8_t> board_index) {
-        return board_index.y * (CELLS_PER_SIDE / 2) + board_index.x / 2;
+    constexpr uint8_t convert_board_index_to_checker_index(const uint8_t board_index) {
+        return static_cast<uint8_t>((board_index - 1) / 2);
+    }
+
+    constexpr uint8_t convert_board_vector_to_checker_index(const Vector<uint8_t> board_vector) {
+        return board_vector.y * (CELLS_PER_SIDE / 2) + board_vector.x / 2;
     }
 
     constexpr uint8_t convert_checker_index_to_board_index(const uint8_t checker_index) {
