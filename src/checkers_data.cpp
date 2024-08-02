@@ -46,4 +46,69 @@ namespace mcts_checkers {
         m_is_in_place{DEFAULT_IS_IN_PLACE},
         m_is_king{DEFAULT_IS_KING}
     {}
+
+
+    std::vector<AttackAction> collect_king_attacks(const CheckersData& data, const uint8_t checker_index) {
+        constexpr auto deviations = std::array{
+            std::array<int8_t, 2>{-1, -1},
+            std::array<int8_t, 2>{CELLS_PER_SIDE, +1}
+        };
+        auto attack_actions = std::vector<AttackAction>{};
+
+        const auto checker_player = data.m_player_index[checker_index];
+        const auto checker_vector = convert_checker_index_to_board_vector(checker_index);
+        for(const auto [bound_y, dev_y] : deviations) {
+            for(const auto [bound_x, dev_x] : deviations) {
+                auto y = static_cast<int8_t>(static_cast<int8_t>(checker_vector.y) + dev_y);
+                auto x = static_cast<int8_t>(static_cast<int8_t>(checker_vector.x) + dev_x);
+                while(y != bound_y and x != bound_x) {
+                    const auto enemy_board_index = Vector{
+                        static_cast<uint8_t>(x),
+                        static_cast<uint8_t>(y)
+                    };
+                    const auto enemy_checker_index = convert_board_vector_to_checker_index(enemy_board_index);
+                    if(
+                        data.m_is_in_place[enemy_checker_index]
+                        and data.m_player_index[enemy_checker_index] != checker_player
+                    ) {
+                        auto block_y = static_cast<int8_t>(y + dev_y);
+                        auto block_x = static_cast<int8_t>(x + dev_x);
+
+                        while(block_y != bound_y and block_x != bound_x) {
+
+                            const auto block_board_vector = Vector{
+                                static_cast<uint8_t>(block_x),
+                                static_cast<uint8_t>(block_y)
+                            };
+
+                            const auto block_checker_index = convert_board_vector_to_checker_index(block_board_vector);
+
+                            if(data.m_is_in_place[block_checker_index]) {
+                                break;
+                            }
+
+                            auto& attack_action = attack_actions.emplace_back(convert_checker_index_to_board_index(block_checker_index));
+
+                            auto new_data = data;
+                            new_data.m_is_in_place.set(enemy_checker_index, false);
+                            new_data.m_is_in_place.set(checker_index, false);
+
+                            new_data.m_is_in_place.set(block_checker_index, true);
+                            new_data.m_player_index.set(block_checker_index, checker_player);
+                            new_data.m_is_king.set(block_checker_index, true);
+
+                            attack_action.m_child_actions = collect_king_attacks(new_data, block_checker_index);
+
+                            block_y = static_cast<int8_t>(block_y + dev_y);
+                            block_x = static_cast<int8_t>(block_x + dev_x);
+                        }
+                        break;
+                    }
+                    y = static_cast<int8_t>(y + dev_y);
+                    x = static_cast<int8_t>(x + dev_x);
+                }
+            }
+        }
+    }
+
 }

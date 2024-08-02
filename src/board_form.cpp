@@ -100,7 +100,7 @@ namespace mcts_checkers::board_form {
 
         if(const auto checker_index_opt = convert_board_index_to_checker_index(cell_index)) {
             const auto checker_index = *checker_index_opt;
-            if(checkers_data.m_is_in_place[checker_index] and checkers_data.m_player_index[checker_index] == checkers_data.m_current_player_index) {
+            if(checkers_data.data.m_is_in_place[checker_index] and checkers_data.data.m_player_index[checker_index] == checkers_data.m_current_player_index) {
                 ImGui::GetWindowDrawList()->AddRect(real_p_min, real_p_max, GREEN_COLOR, 2, 0, 8);
                 return;
             }
@@ -145,11 +145,11 @@ namespace mcts_checkers::board_form {
         const auto form_pos = ImGui::GetCursorScreenPos();
         for(uint8_t y = 0, checker_index = 0; y < CELLS_PER_SIDE; ++y) {
             for(uint8_t x = y % 2 == 0 ? 1 : 0; x < CELLS_PER_SIDE; x += 2, ++checker_index) {
-                if(not data.m_is_in_place[checker_index]) continue;
+                if(not data.data.m_is_in_place[checker_index]) continue;
                 const auto center = ImVec2(x, y) * cell_size + half_cell_size + form_pos;
-                const auto player_index = data.m_player_index[checker_index];
+                const auto player_index = data.data.m_player_index[checker_index];
                 draw_list->AddEllipseFilled(center, pawn_radius, player_index ? PLAYER_ONE_PAWN_COLOR : PLAYER_TWO_PAWN_COLOR);
-                if(data.m_is_king[checker_index]) {
+                if(data.data.m_is_king[checker_index]) {
                     draw_list->AddEllipseFilled(center, king_hat_radius, KING_HAT_COLOR);
                 }
             }

@@ -7,7 +7,7 @@ add_subdirectory(external)
 
 find_package(Boost REQUIRED COMPONENTS system)
 
-add_executable(${PROJECT_NAME} main.cpp
+add_library(mcts_checkers
         include/mcts_checkers/utils.hpp
         include/mcts_checkers/main_form.hpp
         src/main_form.cpp
@@ -19,10 +19,9 @@ add_executable(${PROJECT_NAME} main.cpp
         src/checkers_data.cpp
         include/mcts_checkers/mcts.hpp
         src/mcts.cpp
-        tests/calc_max_jumps.cpp
 )
-target_include_directories(${PROJECT_NAME} PUBLIC include)
-target_link_libraries(${PROJECT_NAME}
+target_include_directories(mcts_checkers PUBLIC include)
+target_link_libraries(mcts_checkers
         PUBLIC
         ImGui-SFML::ImGui-SFML
         tl::expected
@@ -30,6 +29,12 @@ target_link_libraries(${PROJECT_NAME}
         boost_system
 )
 
-target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra)
-#target_compile_options(${PROJECT_NAME} PRIVATE -Werror)
+target_compile_options(mcts_checkers PRIVATE -Wall -Wextra)
+#target_compile_options(mcts_checkers PRIVATE -Werror)
+
+add_executable(main_mcts_checkers main.cpp)
+target_link_libraries(main_mcts_checkers PUBLIC mcts_checkers)
+target_compile_options(main_mcts_checkers PRIVATE -Wall -Wextra)
+
+add_subdirectory(tests)
 
