@@ -5,6 +5,8 @@ set(CMAKE_CXX_STANDARD 20)
 
 add_subdirectory(external)
 
+find_package(Boost REQUIRED COMPONENTS system)
+
 add_executable(${PROJECT_NAME} main.cpp
         include/mcts_checkers/utils.hpp
         include/mcts_checkers/main_form.hpp
@@ -25,6 +27,7 @@ target_link_libraries(${PROJECT_NAME}
         ImGui-SFML::ImGui-SFML
         tl::expected
         tl::optional
+        boost_system
 )
 
 target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra)

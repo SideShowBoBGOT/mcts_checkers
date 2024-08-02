@@ -3,6 +3,7 @@
 #include <concepts>
 #include <array>
 #include <vector>
+#include <boost/container/static_vector.hpp>
 
 namespace mcts_checkers {
     constexpr uint8_t CELLS_PER_SIDE = 10;
@@ -29,10 +30,6 @@ namespace mcts_checkers {
         std::vector<AttackAction> m_child_actions{};
     };
 
-    struct MoveAction {
-        std::vector<uint8_t> m_cell_indexes;
-    };
-
     template<typename T>
     struct Vector {
         T x{};
@@ -40,11 +37,11 @@ namespace mcts_checkers {
     };
 
     template<std::integral T>
-    static constexpr bool is_even(const T value) {
+    constexpr bool is_even(const T value) {
         return value % 2 == 0;
     }
 
-    static constexpr bool is_coord_not_valid(const int8_t coord) {
+    constexpr bool is_coord_not_valid(const int8_t coord) {
         return coord < 0 or coord >= static_cast<int8_t>(BOARD_CELLS_COUNT);
     }
 
@@ -59,8 +56,15 @@ namespace mcts_checkers {
         return static_cast<uint8_t>(checker_vector.y * CHECKERS_PER_COL + checker_vector.x);
     }
 
+    constexpr std::array<int8_t, 2> get_deviations_x(const uint8_t y) {
+        return {0, static_cast<int8_t>(is_even(y) ? 1 : -1)};
+    }
+
+    constexpr std::array<int8_t, 2> DEVIATIONS_Y = {-1, 1};
+
     // Provided that a pawn ends the whole attack chain on enemy`s first row, it must become a king
-    std::vector<AttackAction> collect_attacks(const CheckersData& data, const uint8_t checker_index) {
+    std::vector<AttackAction> collect_pawn_attacks(const CheckersData& data, const uint8_t checker_index) {
+        constexpr std::array<int8_t, 2> deviations_y = {-1, 1};
         constexpr std::array<int8_t, 2> even_deviations_x = {0, 1};
         constexpr std::array<int8_t, 2> uneven_deviations_x = {0, -1};
         constexpr auto deviation_cases = std::array{
@@ -76,7 +80,7 @@ namespace mcts_checkers {
             if(is_coord_not_valid(next_x)) continue;
             const auto jump_x = static_cast<int8_t>(next_x + deviations_x[1][dev_x != deviations_x[0][0]]);
             if(is_coord_not_valid(jump_x)) continue;
-            for(const int8_t dev_y : {-1, 1}) {
+            for(const int8_t dev_y : DEVIATIONS_Y) {
                 const auto next_y = static_cast<int8_t>(checker_pos.y + dev_y);
                 if(is_coord_not_valid(next_y)) continue;
                 const auto jump_y = static_cast<int8_t>(next_y + dev_y);
@@ -85,7 +89,6 @@ namespace mcts_checkers {
                     static_cast<uint8_t>(next_x),
                     static_cast<uint8_t>(next_y)
                 };
-
                 const auto next_checker_index = checker_vector_to_index(next_checker_vector);
                 const auto next_checker_player = data.m_player_index[next_checker_index];
 
@@ -103,39 +106,64 @@ namespace mcts_checkers {
                 new_data.m_is_in_place[next_checker_index] = false;
                 new_data.m_is_in_place[jump_checker_index] = true;
                 new_data.m_player_index[jump_checker_index] = checker_player;
-                new_data.m_is_king[jump_checker_index] = data.m_is_king[checker_index];
+                new_data.m_is_king[jump_checker_index] = false;
 
-                auto& new_action = nodes.emplace_back(next_checker_index);
-                new_action.m_child_actions = collect_attacks(new_data, jump_checker_index);
+                auto& new_action = nodes.emplace_back(jump_checker_index);
+                new_action.m_child_actions = collect_pawn_attacks(new_data, jump_checker_index);
             }
         }
         return nodes;
     }
 
+    constexpr uint8_t board_index_to_checker(const Vector<uint8_t> board_index) {
+        return board_index.y * (CELLS_PER_SIDE / 2) + board_index.x / 2;
+    }
+
+    std::vector<AttackAction> collect_king_attacks(const CheckersData& data, const uint8_t checker_index) {
+        const auto deviations = std::array{
+            std::array<int8_t, 2>{-1, -1},
+            std::array<int8_t, 2>{CELLS_PER_SIDE, +1}
+        };
+        const auto checker_player = data.m_player_index[checker_index];
+        Vector<uint8_t> checker_vector;
+        for(const auto [bound_y, dev_y] : deviations) {
+            for(const auto [bound_x, dev_x] : deviations) {
+                auto y = static_cast<int8_t>(static_cast<int8_t>(checker_vector.y) + dev_y);
+                auto x = static_cast<int8_t>(static_cast<int8_t>(checker_vector.x) + dev_x);
+                while(y != bound_y and x != bound_x) {
+                    const auto enemy_board_index = Vector{
+                        static_cast<uint8_t>(x),
+                        static_cast<uint8_t>(y)
+                    };
+                    const auto ememy_checker_index = board_index_to_checker(enemy_board_index);
+                    if(
+                        data.m_is_in_place[ememy_checker_index]
+                        and data.m_player_index[ememy_checker_index] != checker_player
+                    ) {
+                        auto block_y = static_cast<int8_t>(y + dev_y);
+                        auto block_x = static_cast<int8_t>(x + dev_x);
+
+                        while(block_y != bound_y and block_x != bound_x) {
+                            const auto block_board_index = Vector{
+                                static_cast<uint8_t>(block_x),
+                                static_cast<uint8_t>(block_y)
+                            };
+                            const auto block_checker_index = board_index_to_checker(block_board_index);
+                            if(
+                                data.m_is_in_place[block_checker_index]
+                                and data.m_player_index[block_checker_index] != checker_player
+                            ) {
+                                break;
+                            }
 
 
-    void calculate_pawn_actions(const bool player_index, const CheckersData& data, const uint8_t checker_index) {
-
-        const auto x = static_cast<int8_t>(checker_index % CELLS_PER_SIDE);
-        const auto y = static_cast<int8_t>(checker_index / CELLS_PER_SIDE);
-
-        for(const auto y_dev : {-1, 1}) {
-            const auto y_shifted = y + y_dev;
-            if(y_shifted < 0 or y_shifted >= CELLS_PER_SIDE) {
-                continue;
-            }
-            for(const auto x_dev : {0, 1}) {
-                const auto x_shifted = static_cast<int8_t>(x + x_dev);
-                if(x_shifted < 0 or x_shifted >= CELLS_PER_SIDE) {
-                    continue;
-                }
-                const auto cell_index = static_cast<uint8_t>(y_shifted * CELLS_PER_SIDE + x_shifted);
-
-                if(data.m_is_in_place[cell_index]) {
-
-                } else {
-
-                    moves.push_back(cell_index);
+                            block_y = static_cast<int8_t>(block_y + dev_y);
+                            block_x = static_cast<int8_t>(block_x + dev_x);
+                        }
+                        break;
+                    }
+                    y = static_cast<int8_t>(y + dev_y);
+                    x = static_cast<int8_t>(x + dev_x);
                 }
 
             }
@@ -143,9 +171,33 @@ namespace mcts_checkers {
 
     }
 
-    void calculate_king_actions(const bool player_index, const CheckersData& data, const uint8_t checker_index) {
+    boost::container::static_vector<uint8_t, 2> collect_pawn_moves(const CheckersData& data, const uint8_t checker_index) {
+        const auto checker_pos = checker_index_to_vector(checker_index);
+        const auto checker_player = data.m_player_index[checker_index];
+        const auto dev_y = static_cast<int8_t>(checker_player ? -1 : 1);
+        const auto next_y = static_cast<int8_t>(checker_pos.y + dev_y);
+        if(is_coord_not_valid(next_y)) return {};
 
+        constexpr std::array<int8_t, 2> even_deviations_x = {0, 1};
+        constexpr std::array<int8_t, 2> uneven_deviations_x = {0, -1};
+        const auto deviations_x = is_even(checker_pos.y) ? even_deviations_x : uneven_deviations_x;
+        auto nodes = boost::container::static_vector<uint8_t, 2>{};
+        for(const int8_t dev_x : deviations_x) {
+            const auto next_x = static_cast<int8_t>(dev_x + checker_pos.x);
+            if(is_coord_not_valid(next_x)) continue;
+            const auto next_checker_vector = Vector{
+                static_cast<uint8_t>(next_x),
+                static_cast<uint8_t>(next_y)
+            };
+            const auto next_checker_index = checker_vector_to_index(next_checker_vector);
+
+            if(data.m_is_in_place[next_checker_index]) continue;
+            nodes.emplace_back(next_checker_index);
+        }
+        return nodes;
     }
+
+
 
 
 

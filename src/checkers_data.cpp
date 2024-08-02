@@ -41,23 +41,9 @@ namespace mcts_checkers {
         "00000"
     };
 
-    static const auto DEFAULT_IS_DONE_FIRST_MOVE = std::bitset<CHEKCERS_CELLS_COUNT>{
-        "11111"
-        "11111"
-        "11111"
-        "11111"
-        "00000"
-        "00000"
-        "11111"
-        "11111"
-        "11111"
-        "11111"
-    };
-
     CheckersData::CheckersData(
     ) : m_player_index{DEFAULT_PLAYER_INDEX},
         m_is_in_place{DEFAULT_IS_IN_PLACE},
-        m_is_king{DEFAULT_IS_KING},
-        m_is_done_first_move{DEFAULT_IS_DONE_FIRST_MOVE}
+        m_is_king{DEFAULT_IS_KING}
     {}
 }
