@@ -1,4 +1,5 @@
 #include <mcts_checkers/checkers_data.hpp>
+#include <array>
 
 namespace mcts_checkers {
 

@@ -10,6 +10,6 @@ set(test_names
 
 foreach(test_name ${test_names})
     add_executable(test_${test_name} test_${test_name}.cpp)
-    target_link_libraries(test_${test_name} mcts_checkers GTest::gtest GTest::gtest_main)
+    target_link_libraries(test_${test_name} mcts_checkers nlohmann_json::nlohmann_json GTest::gtest GTest::gtest_main)
     gtest_discover_tests(test_${test_name})
 endforeach()

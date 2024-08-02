@@ -1,0 +1,88 @@
+{
+  "checker_vector": [2, 8],
+  "board": [
+    " 0123456789",
+    "0█ █ █ █ █ ",
+    "1 █ █ █x█x█",
+    "2█ █ █ █ █ ",
+    "3 █x█x█x█x█",
+    "4█ █ █ █ █ ",
+    "5 █x█ █x█ █",
+    "6█ █ █ █ █ ",
+    "7 █x█x█x█ █",
+    "8█o█ █ █ █ ",
+    "9 █ █ █ █ █",
+    " 0123456789"
+  ],
+  "result": [
+    {
+      "index": 63,
+      "children": [
+        {
+          "index": 85,
+          "children": [
+            {
+              "index": 67,
+              "children": [
+                {
+                  "index": 45,
+                  "children": [
+                    {
+                      "index": 27,
+                      "children": [
+                        {
+                          "index": 49,
+                          "children": []
+                        },
+                        {
+                          "index": 9,
+                          "children": []
+                        },
+                        {
+                          "index": 5,
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "index": 41,
+          "children": [
+            {
+              "index": 23,
+              "children": [
+                {
+                  "index": 45,
+                  "children": [
+                    {
+                      "index": 27,
+                      "children": [
+                        {
+                          "index": 49,
+                          "children": []
+                        },
+                        {
+                          "index": 9,
+                          "children": []
+                        },
+                        {
+                          "index": 5,
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
