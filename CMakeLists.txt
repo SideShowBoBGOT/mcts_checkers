@@ -16,6 +16,8 @@ add_executable(${PROJECT_NAME} main.cpp
         include/mcts_checkers/checkers_data.hpp
         src/checkers_data.cpp
         include/mcts_checkers/mcts.hpp
+        src/mcts.cpp
+        tests/calc_max_jumps.cpp
 )
 target_include_directories(${PROJECT_NAME} PUBLIC include)
 target_link_libraries(${PROJECT_NAME}

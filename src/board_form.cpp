@@ -27,7 +27,7 @@ namespace mcts_checkers::board_form {
     static const auto KING_HAT_COLOR = GREY_COLOR;
 
     static ImVec2 calc_cell_size() {
-        return ImGui::GetWindowSize() / BOARD_SIDE_CELL_COUNT;
+        return ImGui::GetWindowSize() / CELLS_PER_SIDE;
     }
 
 
@@ -65,7 +65,7 @@ namespace mcts_checkers::board_form {
     }
 
     constexpr uint8_t convert_board_index(const ImVec2ih board_index) {
-        return board_index.y * BOARD_SIDE_CELL_COUNT + board_index.x;
+        return board_index.y * CELLS_PER_SIDE + board_index.x;
     }
 
     constexpr bool is_white_cell(const ImVec2ih cell_index) {
@@ -76,10 +76,10 @@ namespace mcts_checkers::board_form {
         if(is_white_cell(cell_index)) {
             return tl::nullopt;
         }
-        return cell_index.y * (BOARD_SIDE_CELL_COUNT / 2) + cell_index.x / 2;
+        return cell_index.y * (CELLS_PER_SIDE / 2) + cell_index.x / 2;
     }
 
-    void StateUnselected::iter(const ProtocolStateChanger<Form> state_changer, const CheckersData& checkers_data) {
+    void StateUnselected::iter(const ProtocolStateChanger<Form> state_changer, const GameData& checkers_data) {
         if(not ImGui::IsWindowHovered(ImGuiHoveredFlags_None)) return;
 
         const auto mouse_pos = calc_mouse_local_window_pos();
@@ -108,10 +108,10 @@ namespace mcts_checkers::board_form {
         ImGui::GetWindowDrawList()->AddRect(real_p_min, real_p_max, YELLOW_COLOR, 2, 0, 8);
     }
 
-    void StateSelected::iter(const ProtocolStateChanger<Form> state_changer, const CheckersData& checkers_data) {
+    void StateSelected::iter(const ProtocolStateChanger<Form> state_changer, const GameData& checkers_data) {
     }
 
-    void StateSelectionConfirmed::iter(const ProtocolStateChanger<Form> state_changer, const CheckersData& checkers_data) {
+    void StateSelectionConfirmed::iter(const ProtocolStateChanger<Form> state_changer, const GameData& checkers_data) {
 
     }
 
@@ -121,9 +121,9 @@ namespace mcts_checkers::board_form {
         const auto cell_size = calc_cell_size();
         auto is_white = true;
         auto dev_y = form_pos.y;
-        for(uint16_t y = 0; y < BOARD_SIDE_CELL_COUNT; ++y) {
+        for(uint16_t y = 0; y < CELLS_PER_SIDE; ++y) {
             auto dev_x = form_pos.x;
-            for(uint16_t x = 0; x < BOARD_SIDE_CELL_COUNT; ++x) {
+            for(uint16_t x = 0; x < CELLS_PER_SIDE; ++x) {
                 const auto deviation = ImVec2{dev_x, dev_y};
                 draw_list->AddRectFilled(
                     deviation, deviation + cell_size, is_white ? BOARD_CELL_ONE_COLOR : BOARD_CELL_TWO_COLOR
@@ -136,15 +136,15 @@ namespace mcts_checkers::board_form {
         }
     }
 
-    static void draw_checkers(const CheckersData& data) {
+    static void draw_checkers(const GameData& data) {
         const auto draw_list = ImGui::GetWindowDrawList();
         const auto cell_size = calc_cell_size();
         const auto half_cell_size = cell_size / 2;
         const auto pawn_radius = half_cell_size * 0.8;
         const auto king_hat_radius = half_cell_size / 2;
         const auto form_pos = ImGui::GetCursorScreenPos();
-        for(uint8_t y = 0, checker_index = 0; y < BOARD_SIDE_CELL_COUNT; ++y) {
-            for(uint8_t x = y % 2 == 0 ? 1 : 0; x < BOARD_SIDE_CELL_COUNT; x += 2, ++checker_index) {
+        for(uint8_t y = 0, checker_index = 0; y < CELLS_PER_SIDE; ++y) {
+            for(uint8_t x = y % 2 == 0 ? 1 : 0; x < CELLS_PER_SIDE; x += 2, ++checker_index) {
                 if(not data.m_is_in_place[checker_index]) continue;
                 const auto center = ImVec2(x, y) * cell_size + half_cell_size + form_pos;
                 const auto player_index = data.m_player_index[checker_index];
@@ -156,7 +156,7 @@ namespace mcts_checkers::board_form {
         }
     }
 
-    void Form::iter(const CheckersData& checkers_data) {
+    void Form::iter(const GameData& checkers_data) {
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
         ImGui::BeginChild("BoardForm", ImVec2(0, -1), true, ImGuiWindowFlags_NoScrollWithMouse);
         draw_rects();

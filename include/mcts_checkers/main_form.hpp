@@ -13,7 +13,7 @@ class MainForm {
     private:
         board_form::Form m_board_form;
         StatisticForm m_statistic_form;
-        CheckersData m_data;
+        GameData m_data;
 };
 
 }
