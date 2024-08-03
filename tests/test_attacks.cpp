@@ -44,6 +44,12 @@ namespace nlohmann {
                             data.m_player_index[checker_index] = false;
                             break;
                         }
+                        case 'O': {
+                            data.m_is_in_place[checker_index] = true;
+                            data.m_is_king[checker_index] = true;
+                            data.m_player_index[checker_index] = false;
+                            break;
+                        }
                         case 'x': {
                             data.m_is_in_place[checker_index] = true;
                             data.m_is_king[checker_index] = false;
@@ -81,5 +87,6 @@ TEST(TestAttacks, Sanity) {
     auto json_file = nlohmann::json();
     file_stream >> json_file;
     const auto test_data = json_file.get<TestData>();
+    auto result = mcts_checkers::collect_king_attacks(test_data.board, test_data.checker_vector);
     std::cout << "fsdfdsf";
 }

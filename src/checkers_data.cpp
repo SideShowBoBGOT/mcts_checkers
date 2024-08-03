@@ -1,5 +1,6 @@
 #include <mcts_checkers/checkers_data.hpp>
 #include <array>
+#include <algorithm>
 
 namespace mcts_checkers {
 
@@ -48,14 +49,17 @@ namespace mcts_checkers {
         m_is_king{DEFAULT_IS_KING}
     {}
 
+    std::pair<std::vector<AttackAction>, uint64_t> collect_king_attacks(const CheckersData& data, Vector<uint8_t> checker_board_vector) {
+        return collect_king_attacks(data, convert_board_vector_to_checker_index(checker_board_vector));
+    }
 
-    std::vector<AttackAction> collect_king_attacks(const CheckersData& data, const uint8_t checker_index) {
+    std::pair<std::vector<AttackAction>, uint64_t> collect_king_attacks(const CheckersData& data, const uint8_t checker_index) {
         constexpr auto deviations = std::array{
             std::array<int8_t, 2>{-1, -1},
             std::array<int8_t, 2>{CELLS_PER_SIDE, +1}
         };
         auto attack_actions = std::vector<AttackAction>{};
-
+        auto action_sizes = std::vector<uint64_t>{};
         const auto checker_player = data.m_player_index[checker_index];
         const auto checker_vector = convert_checker_index_to_board_vector(checker_index);
         for(const auto [bound_y, dev_y] : deviations) {
@@ -98,7 +102,11 @@ namespace mcts_checkers {
                             new_data.m_player_index.set(block_checker_index, checker_player);
                             new_data.m_is_king.set(block_checker_index, true);
 
-                            attack_action.m_child_actions = collect_king_attacks(new_data, block_checker_index);
+                            {
+                                auto [action, action_size] = collect_king_attacks(new_data, block_checker_index);
+                                action_sizes.emplace_back(action_size + 1);
+                                attack_action.m_child_actions = std::move(action);
+                            }
 
                             block_y = static_cast<int8_t>(block_y + dev_y);
                             block_x = static_cast<int8_t>(block_x + dev_x);
@@ -110,6 +118,10 @@ namespace mcts_checkers {
                 }
             }
         }
+
+
+
+        return {std::move(attack_actions), total_moves};
     }
 
 }
