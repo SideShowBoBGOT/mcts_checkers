@@ -11,6 +11,11 @@ namespace mcts_checkers {
     constexpr uint8_t BOARD_CELLS_COUNT = CELLS_PER_SIDE * CELLS_PER_SIDE;
     constexpr uint8_t CHEKCERS_CELLS_COUNT = BOARD_CELLS_COUNT / 2;
 
+    struct CheckerIndex {
+        explicit CheckerIndex(const uint8_t raw);
+
+    };
+
     struct CheckersData {
         CheckersData();
         std::bitset<CHEKCERS_CELLS_COUNT> m_player_index;
@@ -51,6 +56,7 @@ namespace mcts_checkers {
         };
     }
 
+
     constexpr uint8_t convert_board_index_to_checker_index(const uint8_t board_index) {
         return static_cast<uint8_t>((board_index - 1) / 2);
     }
@@ -64,7 +70,8 @@ namespace mcts_checkers {
     }
 
     constexpr Vector<uint8_t> convert_checker_index_to_board_vector(const uint8_t checker_index) {
-        return convert_board_index_to_board_vector(convert_checker_index_to_board_index(checker_index));
+        const auto board_index = convert_checker_index_to_board_index(checker_index);
+        return convert_board_index_to_board_vector(board_index);
     }
 
     std::pair<std::vector<AttackAction>, uint64_t> collect_king_attacks(const CheckersData& data, Vector<uint8_t> checker_board_vector);

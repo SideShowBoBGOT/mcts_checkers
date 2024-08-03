@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.28)
+cmake_minimum_required(VERSION 3.15)
 project(mcts_checkers)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD 20)
 add_subdirectory(external)
 
 find_package(Boost REQUIRED COMPONENTS system)
+find_package(fmt REQUIRED)
 
 add_library(mcts_checkers
         include/mcts_checkers/utils.hpp
@@ -27,6 +28,8 @@ target_link_libraries(mcts_checkers
         tl::expected
         tl::optional
         boost_system
+        range-v3::range-v3
+        fmt::fmt
 )
 
 target_compile_options(mcts_checkers PRIVATE -Wall -Wextra)

@@ -19,3 +19,6 @@
 [submodule "external/json"]
 	path = external/json
 	url = https://github.com/nlohmann/json
+[submodule "external/range-v3"]
+	path = external/range-v3
+	url = https://github.com/ericniebler/range-v3

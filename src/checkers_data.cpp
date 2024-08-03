@@ -1,6 +1,14 @@
 #include <mcts_checkers/checkers_data.hpp>
 #include <array>
 #include <algorithm>
+#include <mcts_checkers/utils.hpp>
+
+#include <range/v3/algorithm/max_element.hpp>
+#include <range/v3/view/zip.hpp>
+#include <range/v3/view/move.hpp>
+#include <range/v3/view/filter.hpp>
+#include <range/v3/to_container.hpp>
+#include <range/v3/view/transform.hpp>
 
 namespace mcts_checkers {
 
@@ -58,7 +66,7 @@ namespace mcts_checkers {
             std::array<int8_t, 2>{-1, -1},
             std::array<int8_t, 2>{CELLS_PER_SIDE, +1}
         };
-        auto attack_actions = std::vector<AttackAction>{};
+        auto actions = std::vector<AttackAction>{};
         auto action_sizes = std::vector<uint64_t>{};
         const auto checker_player = data.m_player_index[checker_index];
         const auto checker_vector = convert_checker_index_to_board_vector(checker_index);
@@ -92,7 +100,7 @@ namespace mcts_checkers {
                                 break;
                             }
 
-                            auto& attack_action = attack_actions.emplace_back(convert_checker_index_to_board_index(block_checker_index));
+                            auto& attack_action = actions.emplace_back(convert_checker_index_to_board_index(block_checker_index));
 
                             auto new_data = data;
                             new_data.m_is_in_place.set(enemy_checker_index, false);
@@ -119,9 +127,13 @@ namespace mcts_checkers {
             }
         }
 
+        const auto max_action_size = *ranges::max_element(action_sizes);
+        auto range = ranges::views::zip(ranges::views::move(action_sizes), ranges::views::move(actions))
+            | ranges::views::filter([max_action_size](const auto& el) { return el.first == max_action_size; })
+            | ranges::views::transform([](auto&& el) { return utils::checked_move(el.second); })
+            | ranges::to_vector;
 
-
-        return {std::move(attack_actions), total_moves};
+        return {utils::checked_move(range), max_action_size};
     }
 
 }

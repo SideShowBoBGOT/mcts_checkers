@@ -1,5 +1,5 @@
 {
-  "checker_vector": [2, 8],
+  "checker_vector": [0, 9],
   "board": [
     " 0123456789",
     "0# # # # # ",
@@ -21,7 +21,19 @@
         {
           "index": 36,
           "children": [
-
+            {
+              "index": 3,
+              "children": [
+                {
+                  "index": 21,
+                  "children": []
+                },
+                {
+                  "index": 30,
+                  "children": []
+                }
+              ]
+            }
           ]
         }
       ]
@@ -32,7 +44,19 @@
         {
           "index": 36,
           "children": [
-
+            {
+              "index": 3,
+              "children": [
+                {
+                  "index": 21,
+                  "children": []
+                },
+                {
+                  "index": 30,
+                  "children": []
+                }
+              ]
+            }
           ]
         }
       ]
