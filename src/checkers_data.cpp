@@ -127,6 +127,10 @@ namespace mcts_checkers {
             }
         }
 
+        if(action_sizes.empty()) {
+            return {{}, 0};
+        }
+
         const auto max_action_size = *ranges::max_element(action_sizes);
         auto range = ranges::views::zip(ranges::views::move(action_sizes), ranges::views::move(actions))
             | ranges::views::filter([max_action_size](const auto& el) { return el.first == max_action_size; })

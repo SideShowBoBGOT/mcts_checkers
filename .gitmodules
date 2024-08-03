@@ -22,3 +22,6 @@
 [submodule "external/range-v3"]
 	path = external/range-v3
 	url = https://github.com/ericniebler/range-v3
+[submodule "external/strong_type"]
+	path = external/strong_type
+	url = https://github.com/rollbear/strong_type

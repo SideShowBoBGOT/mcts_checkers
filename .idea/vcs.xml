@@ -6,6 +6,9 @@
     <mapping directory="$PROJECT_DIR$/external/expected" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/external/imgui" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/external/imgui-sfml" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/external/json" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/external/optional" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/external/range-v3" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/external/strong_type" vcs="Git" />
   </component>
 </project>

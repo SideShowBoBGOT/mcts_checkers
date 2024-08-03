@@ -56,7 +56,12 @@ namespace nlohmann {
                             data.m_player_index[checker_index] = true;
                             break;
                         }
-                        default: break;
+                        default: {
+                            data.m_is_in_place[checker_index] = false;
+                            data.m_is_king[checker_index] = false;
+                            data.m_player_index[checker_index] = false;
+                            break;
+                        }
                     }
                 }
             }

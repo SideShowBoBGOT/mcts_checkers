@@ -3,6 +3,8 @@
 #include <concepts>
 #include <vector>
 #include <boost/container/static_vector.hpp>
+#include <strong_type/strong_type.hpp>
+#include <strong_type/ordered.hpp>
 
 namespace mcts_checkers {
     constexpr uint8_t CELLS_PER_SIDE = 10;
@@ -10,11 +12,6 @@ namespace mcts_checkers {
     constexpr uint8_t CHECKERS_PER_COL = CELLS_PER_SIDE;
     constexpr uint8_t BOARD_CELLS_COUNT = CELLS_PER_SIDE * CELLS_PER_SIDE;
     constexpr uint8_t CHEKCERS_CELLS_COUNT = BOARD_CELLS_COUNT / 2;
-
-    struct CheckerIndex {
-        explicit CheckerIndex(const uint8_t raw);
-
-    };
 
     struct CheckersData {
         CheckersData();
@@ -51,22 +48,28 @@ namespace mcts_checkers {
 
     constexpr Vector<uint8_t> convert_board_index_to_board_vector(const uint8_t board_index) {
         return {
-            static_cast<uint8_t>(board_index / CELLS_PER_SIDE),
             static_cast<uint8_t>(board_index % CELLS_PER_SIDE),
+            static_cast<uint8_t>(board_index / CELLS_PER_SIDE),
         };
     }
 
-
-    constexpr uint8_t convert_board_index_to_checker_index(const uint8_t board_index) {
-        return static_cast<uint8_t>((board_index - 1) / 2);
+    constexpr uint8_t convert_board_vector_to_board_index(const Vector<uint8_t> board_vector) {
+        return board_vector.y * CELLS_PER_SIDE + board_vector.x;
     }
 
     constexpr uint8_t convert_board_vector_to_checker_index(const Vector<uint8_t> board_vector) {
-        return board_vector.y * (CELLS_PER_SIDE / 2) + board_vector.x / 2;
+        return static_cast<uint8_t>(board_vector.y * CHECKERS_PER_ROW + board_vector.x / 2);
+    }
+
+    constexpr uint8_t convert_board_index_to_checker_index(const uint8_t board_index) {
+        const auto board_vector = convert_board_index_to_board_vector(board_index);
+        return convert_board_vector_to_checker_index(board_vector);
     }
 
     constexpr uint8_t convert_checker_index_to_board_index(const uint8_t checker_index) {
-        return static_cast<uint8_t>(checker_index * 2 + 1);
+        const auto y = static_cast<uint8_t>(checker_index / CHECKERS_PER_ROW);
+        const auto x = static_cast<uint8_t>(checker_index - y * CHECKERS_PER_ROW);
+        return y * CELLS_PER_SIDE + x * 2 + is_even(y);
     }
 
     constexpr Vector<uint8_t> convert_checker_index_to_board_vector(const uint8_t checker_index) {

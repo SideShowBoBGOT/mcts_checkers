@@ -30,6 +30,7 @@ target_link_libraries(mcts_checkers
         boost_system
         range-v3::range-v3
         fmt::fmt
+        strong_type::strong_type
 )
 
 target_compile_options(mcts_checkers PRIVATE -Wall -Wextra)
