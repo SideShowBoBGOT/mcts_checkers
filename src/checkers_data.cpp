@@ -58,8 +58,8 @@ namespace mcts_checkers {
     {}
 
     static constexpr auto DEVIATIONS = std::array{
+        std::array<int8_t, 2>{CELLS_PER_SIDE, +1},
         std::array<int8_t, 2>{-1, -1},
-        std::array<int8_t, 2>{CELLS_PER_SIDE, +1}
     };
 
     std::vector<uint8_t> collect_moves(const CheckersData& data, Vector<uint8_t> checker_board_vector) {
@@ -72,11 +72,12 @@ namespace mcts_checkers {
     ) {
         assert(data.m_is_in_place[checker_index]);
         const auto checker_vector = convert_checker_index_to_board_vector(checker_index);
-
         auto actions = std::vector<uint8_t>{};
         const auto is_king = data.m_is_king[checker_index];
-
-        for(const auto [bound_y, dev_y] : DEVIATIONS) {
+        const auto max_iterations = is_king ? DEVIATIONS.size() : 1;
+        const size_t start_deviation_index = is_king ? 0 : data.m_player_index[checker_index];
+        for(size_t dev_index = start_deviation_index, i = 0; i < max_iterations; ++dev_index, ++i) {
+            const auto [bound_y, dev_y] = DEVIATIONS[dev_index];
             for(const auto [bound_x, dev_x] : DEVIATIONS) {
                 auto y = static_cast<int8_t>(static_cast<int8_t>(checker_vector.y) + dev_y);
                 auto x = static_cast<int8_t>(static_cast<int8_t>(checker_vector.x) + dev_x);
