@@ -1,0 +1,263 @@
+[
+  {
+    "checker_vector": [5, 2],
+    "board": [
+      " 0123456789",
+      "0# # # # # ",
+      "1 # # # # #",
+      "2# # #O# # ",
+      "3 # # # # #",
+      "4# # # # # ",
+      "5 #x# # #x#",
+      "6# # # # # ",
+      "7 # # # # #",
+      "8# #x# #x# ",
+      "9 # # # # #",
+      " 0123456789"
+    ],
+    "result": [
+      {
+        "index": 61,
+        "children": [
+          {
+            "index": 94,
+            "children": [
+              {
+                "index": 49,
+                "children": []
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "index": 69,
+        "children": [
+          {
+            "index": 96,
+            "children": [
+              {
+                "index": 41,
+                "children": []
+              },
+              {
+                "index": 30,
+                "children": []
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "checker_vector": [1, 2],
+    "board": [
+      " 0123456789",
+      "0# # #x# # ",
+      "1 # # #x#x#",
+      "2#O# # # # ",
+      "3 #x# # #x#",
+      "4# # # # # ",
+      "5 # # # #x#",
+      "6# # #x# # ",
+      "7 # # # # #",
+      "8# # #x#x# ",
+      "9 # # # #x#",
+      " 0123456789"
+    ],
+    "result": [
+      {
+        "index": 43,
+        "children": [
+          {
+            "index": 7,
+            "children": [
+              {
+                "index": 29,
+                "children": [
+                  {
+                    "index": 47,
+                    "children": [
+                      {
+                        "index": 69,
+                        "children": [
+                          {
+                            "index": 96,
+                            "children": [
+                              {
+                                "index": 74,
+                                "children": [
+                                  {
+                                    "index": 56,
+                                    "children": []
+                                  },
+                                  {
+                                    "index": 47,
+                                    "children": []
+                                  },
+                                  {
+                                    "index": 38,
+                                    "children": []
+                                  },
+                                  {
+                                    "index": 29,
+                                    "children": []
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "index": 74,
+                        "children": [
+                          {
+                            "index": 96,
+                            "children": [
+                              {
+                                "index": 69,
+                                "children": [
+                                  {
+                                    "index": 47,
+                                    "children": []
+                                  },
+                                  {
+                                    "index": 36,
+                                    "children": []
+                                  },
+                                  {
+                                    "index": 25,
+                                    "children": []
+                                  },
+                                  {
+                                    "index": 14,
+                                    "children": []
+                                  },
+                                  {
+                                    "index": 3,
+                                    "children": []
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "index": 56,
+                    "children": [
+                      {
+                        "index": 74,
+                        "children": [
+                          {
+                            "index": 96,
+                            "children": [
+                              {
+                                "index": 69,
+                                "children": [
+                                  {
+                                    "index": 47,
+                                    "children": []
+                                  },
+                                  {
+                                    "index": 36,
+                                    "children": []
+                                  },
+                                  {
+                                    "index": 25,
+                                    "children": []
+                                  },
+                                  {
+                                    "index": 14,
+                                    "children": []
+                                  },
+                                  {
+                                    "index": 3,
+                                    "children": []
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "checker_vector": [0, 9],
+    "board": [
+      " 0123456789",
+      "0# # # # # ",
+      "1 #x#x# # #",
+      "2# # # # # ",
+      "3 # # # # #",
+      "4# # #x# # ",
+      "5 # # # # #",
+      "6# # # # # ",
+      "7 #x# # # #",
+      "8# # # # # ",
+      "9O# # # # #",
+      " 0123456789"
+    ],
+    "result": [
+      {
+        "index": 63,
+        "children": [
+          {
+            "index": 36,
+            "children": [
+              {
+                "index": 3,
+                "children": [
+                  {
+                    "index": 21,
+                    "children": []
+                  },
+                  {
+                    "index": 30,
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "index": 54,
+        "children": [
+          {
+            "index": 36,
+            "children": [
+              {
+                "index": 3,
+                "children": [
+                  {
+                    "index": 21,
+                    "children": []
+                  },
+                  {
+                    "index": 30,
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]

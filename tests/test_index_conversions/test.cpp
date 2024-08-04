@@ -1,6 +1,5 @@
 #include <gtest/gtest.h>
-#include <mcts_checkers/checkers_data.hpp>
-#include <nlohmann/json.hpp>
+#include <mcts_checkers_test/mcts_checkers_test.hpp>
 #include <fstream>
 #include <filesystem>
 
@@ -11,14 +10,6 @@ struct TestData {
 };
 
 namespace nlohmann {
-    template<>
-        struct adl_serializer<::mcts_checkers::Vector<uint8_t>> {
-        static void from_json(const json& j, mcts_checkers::Vector<uint8_t>& data) {
-            const auto arr = j.get<std::array<uint8_t, 2>>();
-            data.x = arr[0];
-            data.y = arr[1];
-        }
-    };
 
     template<>
     struct adl_serializer<TestData> {
@@ -31,7 +22,7 @@ namespace nlohmann {
 }
 namespace mcts_checkers {
     template<typename T>
-    bool operator==(const mcts_checkers::Vector<T>& first, const mcts_checkers::Vector<T> second) {
+    bool operator==(const Vector<T>& first, const Vector<T> second) {
         return first.x == second.x and first.y == second.y;
     }
 }

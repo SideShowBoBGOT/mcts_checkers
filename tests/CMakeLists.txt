@@ -4,14 +4,12 @@ include(CTest)
 enable_testing()
 include(GoogleTest)
 
-set(test_names
-    attacks
+add_library(mcts_checkers_test
+        include/mcts_checkers_test/mcts_checkers_test.hpp
+        src/mcts_checkers_test.cpp
 )
+target_include_directories(mcts_checkers_test PUBLIC include)
 
-foreach(test_name ${test_names})
-    add_executable(test_${test_name} test_${test_name}.cpp)
-    target_link_libraries(test_${test_name} mcts_checkers nlohmann_json::nlohmann_json GTest::gtest GTest::gtest_main)
-    gtest_discover_tests(test_${test_name})
-endforeach()
-
+target_link_libraries(mcts_checkers_test PUBLIC mcts_checkers nlohmann_json::nlohmann_json)
 add_subdirectory(test_index_conversions)
+add_subdirectory(test_king_attacks)
