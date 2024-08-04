@@ -35,7 +35,6 @@ void validate_actions_equal(
     }
 }
 
-
 struct TestData {
     mcts_checkers::Vector<uint8_t> checker_vector;
     mcts_checkers::CheckersData board;
@@ -44,50 +43,6 @@ struct TestData {
 
 namespace nlohmann {
 
-    template<>
-    struct adl_serializer<mcts_checkers::CheckersData> {
-        static void from_json(const json& j, mcts_checkers::CheckersData& data) {
-            for(uint8_t j_index = 1, y = 0; y < mcts_checkers::CELLS_PER_SIDE; ++j_index, ++y) {
-                auto row = j[j_index].get<std::string_view>();
-                const auto is_even = mcts_checkers::is_even(y);
-                for(
-                    uint8_t row_index = is_even ? 2 : 1,
-                    x = is_even ? 1 : 0;
-                    x < mcts_checkers::CELLS_PER_SIDE;
-                    row_index += 2, x += 2
-                ) {
-                    const auto checker_index = mcts_checkers::convert_board_vector_to_checker_index({x, y});
-                    const auto ch = row[row_index];
-                    switch(ch) {
-                        case 'o': {
-                            data.m_is_in_place[checker_index] = true;
-                            data.m_is_king[checker_index] = false;
-                            data.m_player_index[checker_index] = false;
-                            break;
-                        }
-                        case 'O': {
-                            data.m_is_in_place[checker_index] = true;
-                            data.m_is_king[checker_index] = true;
-                            data.m_player_index[checker_index] = false;
-                            break;
-                        }
-                        case 'x': {
-                            data.m_is_in_place[checker_index] = true;
-                            data.m_is_king[checker_index] = false;
-                            data.m_player_index[checker_index] = true;
-                            break;
-                        }
-                        default: {
-                            data.m_is_in_place[checker_index] = false;
-                            data.m_is_king[checker_index] = false;
-                            data.m_player_index[checker_index] = false;
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-    };
     template<>
     struct adl_serializer<mcts_checkers::AttackAction> {
         static void from_json(const json& j, ::mcts_checkers::AttackAction& data) {

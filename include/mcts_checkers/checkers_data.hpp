@@ -1,10 +1,6 @@
 #pragma once
 #include <bitset>
-#include <concepts>
 #include <vector>
-#include <boost/container/static_vector.hpp>
-#include <strong_type/strong_type.hpp>
-#include <strong_type/ordered.hpp>
 
 namespace mcts_checkers {
     constexpr uint8_t CELLS_PER_SIDE = 10;
@@ -77,6 +73,8 @@ namespace mcts_checkers {
         return convert_board_index_to_board_vector(board_index);
     }
 
+    std::vector<uint8_t> collect_moves(const CheckersData& data, uint8_t checker_index);
+    std::vector<uint8_t> collect_moves(const CheckersData& data, Vector<uint8_t> checker_index);
     std::pair<std::vector<AttackAction>, uint64_t> collect_attacks(const CheckersData& data, Vector<uint8_t> checker_board_vector);
     std::pair<std::vector<AttackAction>, uint64_t> collect_attacks(const CheckersData& data, uint8_t checker_index);
 }
