@@ -66,7 +66,7 @@ namespace mcts_checkers::board_form {
         return is_even(cell_index.y) == is_even(cell_index.x);
     }
 
-    tl::optional<uint8_t> try_convert_board_vector_to_checker_index(const Vector<uint8_t> cell_index) {
+    tl::optional<CheckersIndex> try_convert_board_vector_to_checker_index(const Vector<uint8_t> cell_index) {
         if(is_white_cell(cell_index)) {
             return tl::nullopt;
         }
@@ -108,8 +108,8 @@ namespace mcts_checkers::board_form {
         ImGui::GetWindowDrawList()->AddRect(real_p_min, real_p_max, YELLOW_COLOR, 2, 0, 8);
     }
 
-    StateSelected::StateSelected(const uint8_t checker_index, const GameData& game_data) {
-        collect_attacks(game_data.checkers, checker_index);
+    StateSelected::StateSelected(const CheckersIndex checker_index, const GameData& game_data) {
+        // collect_attacks(game_data.checkers, checker_index);
     }
 
     void StateSelected::iter(const ProtocolStateChanger<Form> state_changer, const GameData& checkers_data) {
@@ -147,7 +147,8 @@ namespace mcts_checkers::board_form {
         const auto pawn_radius = half_cell_size * 0.8;
         const auto king_hat_radius = half_cell_size / 2;
         const auto form_pos = ImGui::GetCursorScreenPos();
-        for(uint8_t y = 0, checker_index = 0; y < CELLS_PER_SIDE; ++y) {
+        auto checker_index = CheckersIndex{0};
+        for(uint8_t y = 0; y < CELLS_PER_SIDE; ++y) {
             for(uint8_t x = y % 2 == 0 ? 1 : 0; x < CELLS_PER_SIDE; x += 2, ++checker_index) {
                 if(not data.checkers.m_is_in_place[checker_index]) continue;
                 const auto center = ImVec2(x, y) * cell_size + half_cell_size + form_pos;

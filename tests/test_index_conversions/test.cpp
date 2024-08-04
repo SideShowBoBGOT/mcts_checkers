@@ -5,7 +5,7 @@
 
 struct TestData {
     uint8_t board_index{};
-    uint8_t checker_index{};
+    mcts_checkers::CheckersIndex checker_index{strong::uninitialized};
     mcts_checkers::Vector<uint8_t> board_vector{};
 };
 
@@ -16,7 +16,7 @@ namespace nlohmann {
         static void from_json(const json& j, TestData& data) {
             data.board_vector = j["board_vector"].get<mcts_checkers::Vector<uint8_t>>();
             data.board_index = j["board_index"].get<uint8_t>();
-            data.checker_index = j["checker_index"].get<uint8_t>();
+            data.checker_index = mcts_checkers::CheckersIndex{j["checker_index"].get<uint8_t>()};
         }
     };
 }

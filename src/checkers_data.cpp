@@ -73,13 +73,13 @@ namespace mcts_checkers {
         std::array<int8_t, 2>{-1, -1},
     };
 
-    std::vector<uint8_t> collect_moves(const CheckersData& data, Vector<uint8_t> checker_board_vector) {
+    std::vector<uint8_t> collect_moves(const CheckersData& data, const Vector<uint8_t> checker_board_vector) {
         return collect_moves(data, convert_board_vector_to_checker_index(checker_board_vector));
     }
 
     std::vector<uint8_t> collect_moves(
         const CheckersData& data,
-        const uint8_t checker_index
+        const CheckersIndex checker_index
     ) {
         assert(data.m_is_in_place[checker_index]);
         const auto checker_vector = convert_checker_index_to_board_vector(checker_index);
@@ -110,13 +110,13 @@ namespace mcts_checkers {
         return actions;
     }
 
-    std::pair<std::vector<AttackAction>, uint64_t> collect_attacks(const CheckersData& data, Vector<uint8_t> checker_board_vector) {
+    std::pair<std::vector<AttackAction>, uint64_t> collect_attacks(const CheckersData& data, const Vector<uint8_t> checker_board_vector) {
         return collect_attacks(data, convert_board_vector_to_checker_index(checker_board_vector));
     }
 
     std::pair<std::vector<AttackAction>, uint64_t> collect_attacks(
         const CheckersData& data,
-        const uint8_t checker_index
+        const CheckersIndex checker_index
     ) {
         assert(data.m_is_in_place[checker_index]);
 
@@ -149,11 +149,11 @@ namespace mcts_checkers {
                             auto& attack_action = actions.emplace_back(convert_checker_index_to_board_index(block_checker_index));
 
                             auto new_data = data;
-                            new_data.m_is_in_place.set(enemy_checker_index, false);
-                            new_data.m_is_in_place.set(checker_index, false);
-                            new_data.m_is_in_place.set(block_checker_index, true);
-                            new_data.m_player_index.set(block_checker_index, checker_player);
-                            new_data.m_is_king.set(block_checker_index, is_king);
+                            new_data.m_is_in_place[enemy_checker_index] = false;
+                            new_data.m_is_in_place[checker_index] = false;
+                            new_data.m_is_in_place[block_checker_index] = true;
+                            new_data.m_player_index[block_checker_index] = checker_player;
+                            new_data.m_is_king[block_checker_index] = is_king;
 
                             auto [action, action_size] = collect_attacks(new_data, block_checker_index);
                             action_sizes.emplace_back(action_size + 1);

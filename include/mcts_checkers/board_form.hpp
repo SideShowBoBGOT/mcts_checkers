@@ -1,4 +1,5 @@
 #pragma once
+#include <mcts_checkers/checkers_types.hpp>
 #include <variant>
 #include <cinttypes>
 
@@ -29,7 +30,7 @@ namespace mcts_checkers::board_form {
     };
 
     struct StateSelected {
-        StateSelected(uint8_t checker_index, const GameData& game_data);
+        StateSelected(CheckersIndex checker_index, const GameData& game_data);
         void iter(ProtocolStateChanger<Form> state_changer, const GameData& checkers_data);
     };
 
