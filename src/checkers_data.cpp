@@ -62,6 +62,42 @@ namespace mcts_checkers {
         std::array<int8_t, 2>{CELLS_PER_SIDE, +1}
     };
 
+    std::vector<uint8_t> collect_moves(const CheckersData& data, Vector<uint8_t> checker_board_vector) {
+        return collect_moves(data, convert_board_vector_to_checker_index(checker_board_vector));
+    }
+
+    std::vector<uint8_t> collect_moves(
+        const CheckersData& data,
+        const uint8_t checker_index
+    ) {
+        assert(data.m_is_in_place[checker_index]);
+        const auto checker_vector = convert_checker_index_to_board_vector(checker_index);
+
+        auto actions = std::vector<uint8_t>{};
+        const auto is_king = data.m_is_king[checker_index];
+
+        for(const auto [bound_y, dev_y] : DEVIATIONS) {
+            for(const auto [bound_x, dev_x] : DEVIATIONS) {
+                auto y = static_cast<int8_t>(static_cast<int8_t>(checker_vector.y) + dev_y);
+                auto x = static_cast<int8_t>(static_cast<int8_t>(checker_vector.x) + dev_x);
+                while(y != bound_y and x != bound_x) {
+
+                    const auto move_board_index = Vector{static_cast<uint8_t>(x), static_cast<uint8_t>(y)};
+                    const auto move_checker_index = convert_board_vector_to_checker_index(move_board_index);
+                    if(data.m_is_in_place[move_checker_index]) {
+                        break;
+                    }
+                    actions.emplace_back(convert_board_vector_to_board_index(move_board_index));
+
+                    if(not is_king) break;
+                    y = static_cast<int8_t>(y + dev_y);
+                    x = static_cast<int8_t>(x + dev_x);
+                }
+            }
+        }
+        return actions;
+    }
+
     std::pair<std::vector<AttackAction>, uint64_t> collect_attacks(const CheckersData& data, Vector<uint8_t> checker_board_vector) {
         return collect_attacks(data, convert_board_vector_to_checker_index(checker_board_vector));
     }
@@ -82,10 +118,7 @@ namespace mcts_checkers {
                 auto y = static_cast<int8_t>(static_cast<int8_t>(checker_vector.y) + dev_y);
                 auto x = static_cast<int8_t>(static_cast<int8_t>(checker_vector.x) + dev_x);
                 while(y != bound_y and x != bound_x) {
-                    const auto enemy_board_index = Vector{
-                        static_cast<uint8_t>(x),
-                        static_cast<uint8_t>(y)
-                    };
+                    const auto enemy_board_index = Vector{static_cast<uint8_t>(x), static_cast<uint8_t>(y)};
                     const auto enemy_checker_index = convert_board_vector_to_checker_index(enemy_board_index);
                     if(
                         data.m_is_in_place[enemy_checker_index]
