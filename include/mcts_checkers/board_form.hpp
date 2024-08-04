@@ -1,5 +1,6 @@
 #pragma once
 #include <variant>
+#include <cinttypes>
 
 namespace mcts_checkers {
     struct GameData;
@@ -24,10 +25,11 @@ namespace mcts_checkers::board_form {
     };
 
     struct StateUnselected {
-        void iter(ProtocolStateChanger<Form> state_changer, const GameData& checkers_data);
+        void iter(ProtocolStateChanger<Form> state_changer, const GameData& game_data);
     };
 
     struct StateSelected {
+        StateSelected(uint8_t checker_index, const GameData& game_data);
         void iter(ProtocolStateChanger<Form> state_changer, const GameData& checkers_data);
     };
 

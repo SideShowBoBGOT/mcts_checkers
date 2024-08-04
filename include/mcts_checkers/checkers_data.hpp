@@ -18,8 +18,8 @@ namespace mcts_checkers {
 
     struct GameData {
         GameData()=default;
-        CheckersData data;
-        bool m_current_player_index = false;
+        CheckersData checkers;
+        bool m_current_player_index = true;
     };
 
     struct AttackAction {
