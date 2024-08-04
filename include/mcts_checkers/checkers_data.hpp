@@ -77,6 +77,6 @@ namespace mcts_checkers {
         return convert_board_index_to_board_vector(board_index);
     }
 
-    std::pair<std::vector<AttackAction>, uint64_t> collect_king_attacks(const CheckersData& data, Vector<uint8_t> checker_board_vector);
-    std::pair<std::vector<AttackAction>, uint64_t> collect_king_attacks(const CheckersData& data, uint8_t checker_index);
+    std::pair<std::vector<AttackAction>, uint64_t> collect_attacks(const CheckersData& data, Vector<uint8_t> checker_board_vector);
+    std::pair<std::vector<AttackAction>, uint64_t> collect_attacks(const CheckersData& data, uint8_t checker_index);
 }

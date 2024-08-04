@@ -12,4 +12,4 @@ target_include_directories(mcts_checkers_test PUBLIC include)
 
 target_link_libraries(mcts_checkers_test PUBLIC mcts_checkers nlohmann_json::nlohmann_json)
 add_subdirectory(test_index_conversions)
-add_subdirectory(test_king_attacks)
+add_subdirectory(test_attacks)
