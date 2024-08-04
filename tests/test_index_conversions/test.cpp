@@ -27,7 +27,6 @@ namespace mcts_checkers {
     }
 }
 
-
 TEST(IndexConversions, Sanity) {
     const auto file_path = std::filesystem::path(__FILE__).parent_path().append("data.json");
     auto file_stream = std::ifstream(file_path);
