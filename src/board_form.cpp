@@ -30,8 +30,6 @@ namespace mcts_checkers::board_form {
         return ImGui::GetWindowSize() / CELLS_PER_SIDE;
     }
 
-
-
     ImVec2 calc_mouse_local_window_pos() {
         return ImGui::GetMousePos() - ImGui::GetCursorScreenPos();
     }
@@ -60,35 +58,31 @@ namespace mcts_checkers::board_form {
         ImGui::GetWindowDrawList()->AddRect(real_p_min, real_p_max, BLUE_COLOR, 2, 0, 8);
     }
 
-    constexpr bool is_even(const int16_t value) {
-        return value % 2 == 0;
-    }
-
     constexpr uint8_t convert_board_index(const ImVec2ih board_index) {
         return board_index.y * CELLS_PER_SIDE + board_index.x;
     }
 
-    constexpr bool is_white_cell(const ImVec2ih cell_index) {
+    constexpr bool is_white_cell(const Vector<uint8_t> cell_index) {
         return is_even(cell_index.y) == is_even(cell_index.x);
     }
 
-    tl::optional<uint8_t> convert_board_index_to_checker_index(const ImVec2ih cell_index) {
+    tl::optional<CheckersIndex> try_convert_board_vector_to_checker_index(const Vector<uint8_t> cell_index) {
         if(is_white_cell(cell_index)) {
             return tl::nullopt;
         }
-        return cell_index.y * (CELLS_PER_SIDE / 2) + cell_index.x / 2;
+        return convert_board_vector_to_checker_index(cell_index);
     }
 
-    void StateUnselected::iter(const ProtocolStateChanger<Form> state_changer, const GameData& checkers_data) {
+    void StateUnselected::iter(const ProtocolStateChanger<Form> state_changer, const GameData& game_data) {
         if(not ImGui::IsWindowHovered(ImGuiHoveredFlags_None)) return;
 
         const auto mouse_pos = calc_mouse_local_window_pos();
         const auto cell_size = calc_cell_size();
         const auto float_cell_index = mouse_pos / cell_size;
-        const auto cell_index = ImVec2ih(
-            static_cast<short>(float_cell_index.x),
-            static_cast<short>(float_cell_index.y)
-        );
+        const auto cell_index = Vector{
+            static_cast<uint8_t>(float_cell_index.x),
+            static_cast<uint8_t>(float_cell_index.y)
+        };
 
         const auto p_min = cell_size * ImVec2(cell_index.x, cell_index.y);
         const auto p_max = p_min + cell_size;
@@ -98,14 +92,24 @@ namespace mcts_checkers::board_form {
         const auto real_p_min = p_min + form_pos;
         const auto real_p_max = p_max + form_pos;
 
-        if(const auto checker_index_opt = convert_board_index_to_checker_index(cell_index)) {
+        if(const auto checker_index_opt = try_convert_board_vector_to_checker_index(cell_index)) {
             const auto checker_index = *checker_index_opt;
-            if(checkers_data.data.m_is_in_place[checker_index] and checkers_data.data.m_player_index[checker_index] == checkers_data.m_current_player_index) {
+            if(
+                game_data.checkers.m_is_in_place[checker_index]
+                and game_data.checkers.m_player_index[checker_index] == game_data.m_current_player_index
+            ) {
                 ImGui::GetWindowDrawList()->AddRect(real_p_min, real_p_max, GREEN_COLOR, 2, 0, 8);
+                if(ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+                    state_changer.change_state(StateSelected{checker_index, game_data});
+                }
                 return;
             }
         }
         ImGui::GetWindowDrawList()->AddRect(real_p_min, real_p_max, YELLOW_COLOR, 2, 0, 8);
+    }
+
+    StateSelected::StateSelected(const CheckersIndex checker_index, const GameData& game_data) {
+        // collect_attacks(game_data.checkers, checker_index);
     }
 
     void StateSelected::iter(const ProtocolStateChanger<Form> state_changer, const GameData& checkers_data) {
@@ -143,13 +147,14 @@ namespace mcts_checkers::board_form {
         const auto pawn_radius = half_cell_size * 0.8;
         const auto king_hat_radius = half_cell_size / 2;
         const auto form_pos = ImGui::GetCursorScreenPos();
-        for(uint8_t y = 0, checker_index = 0; y < CELLS_PER_SIDE; ++y) {
+        auto checker_index = CheckersIndex{0};
+        for(uint8_t y = 0; y < CELLS_PER_SIDE; ++y) {
             for(uint8_t x = y % 2 == 0 ? 1 : 0; x < CELLS_PER_SIDE; x += 2, ++checker_index) {
-                if(not data.data.m_is_in_place[checker_index]) continue;
+                if(not data.checkers.m_is_in_place[checker_index]) continue;
                 const auto center = ImVec2(x, y) * cell_size + half_cell_size + form_pos;
-                const auto player_index = data.data.m_player_index[checker_index];
+                const auto player_index = data.checkers.m_player_index[checker_index];
                 draw_list->AddEllipseFilled(center, pawn_radius, player_index ? PLAYER_ONE_PAWN_COLOR : PLAYER_TWO_PAWN_COLOR);
-                if(data.data.m_is_king[checker_index]) {
+                if(data.checkers.m_is_king[checker_index]) {
                     draw_list->AddEllipseFilled(center, king_hat_radius, KING_HAT_COLOR);
                 }
             }
