@@ -2,7 +2,7 @@
 #include <variant>
 
 namespace mcts_checkers {
-    struct CheckersData;
+    struct GameData;
 }
 
 namespace mcts_checkers::board_form {
@@ -24,15 +24,15 @@ namespace mcts_checkers::board_form {
     };
 
     struct StateUnselected {
-        void iter(ProtocolStateChanger<Form> state_changer, const CheckersData& checkers_data);
+        void iter(ProtocolStateChanger<Form> state_changer, const GameData& checkers_data);
     };
 
     struct StateSelected {
-        void iter(ProtocolStateChanger<Form> state_changer, const CheckersData& checkers_data);
+        void iter(ProtocolStateChanger<Form> state_changer, const GameData& checkers_data);
     };
 
     struct StateSelectionConfirmed {
-        void iter(ProtocolStateChanger<Form> state_changer, const CheckersData& checkers_data);
+        void iter(ProtocolStateChanger<Form> state_changer, const GameData& checkers_data);
     };
 
     using State = std::variant<StateUnselected, StateSelected, StateSelectionConfirmed>;
@@ -40,7 +40,7 @@ namespace mcts_checkers::board_form {
     class Form {
         public:
             Form();
-            void iter(const CheckersData& checkers_data);
+            void iter(const GameData& checkers_data);
             void change_state(State&& state);
 
         State m_state = StateUnselected{};

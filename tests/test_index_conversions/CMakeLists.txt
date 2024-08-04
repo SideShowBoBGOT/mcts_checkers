@@ -1,0 +1,3 @@
+add_executable(test_index_conversions test.cpp)
+target_link_libraries(test_index_conversions mcts_checkers_test GTest::gtest GTest::gtest_main)
+gtest_discover_tests(test_index_conversions)
