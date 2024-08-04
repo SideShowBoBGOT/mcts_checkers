@@ -1,3 +1,0 @@
-add_executable(test_king_attacks test.cpp)
-target_link_libraries(test_king_attacks mcts_checkers_test GTest::gtest GTest::gtest_main)
-gtest_discover_tests(test_king_attacks)

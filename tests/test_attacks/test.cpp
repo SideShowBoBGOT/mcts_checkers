@@ -115,7 +115,7 @@ TEST(TestAttacks, Sanity) {
     file_stream >> json_file;
     for(const auto& json_test_data : json_file) {
         const auto test_data = json_test_data.get<TestData>();
-        const auto result = mcts_checkers::collect_king_attacks(test_data.board, test_data.checker_vector);
+        const auto result = mcts_checkers::collect_attacks(test_data.board, test_data.checker_vector);
         validate_actions_equal(result.first, test_data.result);
     }
 }
