@@ -46,7 +46,7 @@ namespace nlohmann {
     template<>
     struct adl_serializer<mcts_checkers::AttackAction> {
         static void from_json(const json& j, ::mcts_checkers::AttackAction& data) {
-            data.m_board_index = j["index"].get<uint8_t>();
+            data.m_board_index = mcts_checkers::BoardIndex{j["index"].get<uint8_t>()};
             for(const auto& ch : j["children"]) {
                 from_json(ch, data.m_child_actions.emplace_back());
             }

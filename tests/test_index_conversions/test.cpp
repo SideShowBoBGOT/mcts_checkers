@@ -4,8 +4,8 @@
 #include <filesystem>
 
 struct TestData {
-    uint8_t board_index{};
-    mcts_checkers::CheckersIndex checker_index{strong::uninitialized};
+    mcts_checkers::BoardIndex board_index{strong::uninitialized};
+    mcts_checkers::CheckerIndex checker_index{strong::uninitialized};
     mcts_checkers::Vector<uint8_t> board_vector{};
 };
 
@@ -15,8 +15,8 @@ namespace nlohmann {
     struct adl_serializer<TestData> {
         static void from_json(const json& j, TestData& data) {
             data.board_vector = j["board_vector"].get<mcts_checkers::Vector<uint8_t>>();
-            data.board_index = j["board_index"].get<uint8_t>();
-            data.checker_index = mcts_checkers::CheckersIndex{j["checker_index"].get<uint8_t>()};
+            data.board_index = mcts_checkers::BoardIndex{j["board_index"].get<uint8_t>()};
+            data.checker_index = mcts_checkers::CheckerIndex{j["checker_index"].get<uint8_t>()};
         }
     };
 }

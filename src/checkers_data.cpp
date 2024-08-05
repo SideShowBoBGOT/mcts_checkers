@@ -73,17 +73,17 @@ namespace mcts_checkers {
         std::array<int8_t, 2>{-1, -1},
     };
 
-    std::vector<uint8_t> collect_moves(const CheckersData& data, const Vector<uint8_t> checker_board_vector) {
+    std::vector<MoveAction> collect_moves(const CheckersData& data, const Vector<uint8_t> checker_board_vector) {
         return collect_moves(data, convert_board_vector_to_checker_index(checker_board_vector));
     }
 
-    std::vector<uint8_t> collect_moves(
+    std::vector<MoveAction> collect_moves(
         const CheckersData& data,
-        const CheckersIndex checker_index
+        const CheckerIndex checker_index
     ) {
         assert(data.m_is_in_place[checker_index]);
         const auto checker_vector = convert_checker_index_to_board_vector(checker_index);
-        auto actions = std::vector<uint8_t>{};
+        auto actions = std::vector<MoveAction>{};
         const auto is_king = data.m_is_king[checker_index];
         const auto max_iterations = is_king ? DEVIATIONS.size() : 1;
         const size_t start_deviation_index = is_king ? 0 : data.m_player_index[checker_index];
@@ -116,7 +116,7 @@ namespace mcts_checkers {
 
     std::pair<std::vector<AttackAction>, uint64_t> collect_attacks(
         const CheckersData& data,
-        const CheckersIndex checker_index
+        const CheckerIndex checker_index
     ) {
         assert(data.m_is_in_place[checker_index]);
 

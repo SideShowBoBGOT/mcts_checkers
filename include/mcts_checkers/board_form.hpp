@@ -1,13 +1,13 @@
 #pragma once
 #include <mcts_checkers/checkers_types.hpp>
 #include <variant>
-#include <cinttypes>
+#include <vector>
 
 namespace mcts_checkers {
     struct GameData;
 }
 
-namespace mcts_checkers::board_form {
+namespace mcts_checkers::board {
 
     class Form;
 
@@ -29,16 +29,44 @@ namespace mcts_checkers::board_form {
         void iter(ProtocolStateChanger<Form> state_changer, const GameData& game_data);
     };
 
-    struct StateSelected {
-        StateSelected(CheckersIndex checker_index, const GameData& game_data);
-        void iter(ProtocolStateChanger<Form> state_changer, const GameData& checkers_data);
-    };
+    namespace selected {
+
+        class Form;
+
+        class MoveActionForm {
+            public:
+                MoveActionForm(std::vector<MoveAction>&& actions);
+                void iter(ProtocolStateChanger<Form> state_changer, const GameData& checkers_data) const;
+
+            private:
+                std::vector<MoveAction> m_actions;
+
+        };
+
+        class AttackActionForm {
+            public:
+                void iter(ProtocolStateChanger<Form> state_changer, const GameData& checkers_data) const;
+        };
+
+        using State = std::variant<MoveActionForm, AttackActionForm>;
+
+        class Form {
+            public:
+                Form(CheckerIndex checker_index, const GameData& game_data);
+                void iter(ProtocolStateChanger<board::Form> state_changer, const GameData& checkers_data);
+                void change_state(State&& state);
+
+            private:
+                CheckerIndex m_index;
+                State m_state;
+        };
+    }
 
     struct StateSelectionConfirmed {
         void iter(ProtocolStateChanger<Form> state_changer, const GameData& checkers_data);
     };
 
-    using State = std::variant<StateUnselected, StateSelected, StateSelectionConfirmed>;
+    using State = std::variant<StateUnselected, selected::Form, StateSelectionConfirmed>;
 
     class Form {
         public:

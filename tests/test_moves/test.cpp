@@ -10,15 +10,22 @@
 struct TestData {
     mcts_checkers::Vector<uint8_t> checker_vector;
     mcts_checkers::CheckersData board;
-    std::vector<uint8_t> result;
+    std::vector<mcts_checkers::BoardIndex> result;
 };
 
 namespace nlohmann {
 
     template<>
+    struct adl_serializer<mcts_checkers::BoardIndex> {
+        static mcts_checkers::BoardIndex from_json(const json& j) {
+            return mcts_checkers::BoardIndex{j.get<uint8_t>()};
+        }
+    };
+
+    template<>
     struct adl_serializer<mcts_checkers::AttackAction> {
         static void from_json(const json& j, mcts_checkers::AttackAction& data) {
-            data.m_board_index = j["index"].get<uint8_t>();
+            data.m_board_index = mcts_checkers::BoardIndex{j["index"].get<uint8_t>()};
             for(const auto& ch : j["children"]) {
                 from_json(ch, data.m_child_actions.emplace_back());
             }
@@ -30,19 +37,19 @@ namespace nlohmann {
         static void from_json(const json& j, TestData& data) {
             data.checker_vector = j["checker_vector"].get<mcts_checkers::Vector<uint8_t>>();
             data.board = j["board"].get<mcts_checkers::CheckersData>();
-            data.result = j["result"].get<std::vector<uint8_t>>();
+            data.result = j["result"].get<std::vector<mcts_checkers::BoardIndex>>();
         }
     };
 
 }
 
-std::unordered_set<uint8_t> validate_unique(const std::vector<uint8_t>& v) {
+std::unordered_set<mcts_checkers::BoardIndex> validate_unique(const std::vector<mcts_checkers::BoardIndex>& v) {
     auto s = std::unordered_set(std::begin(v), std::end(v));
     EXPECT_EQ(s.size(), v.size());
     return s;
 }
 
-void validate_result(const std::vector<uint8_t>& result, const std::vector<uint8_t>& expected) {
+void validate_result(const std::vector<mcts_checkers::BoardIndex>& result, const std::vector<mcts_checkers::BoardIndex>& expected) {
     const auto result_set = validate_unique(result);
     const auto expected_set = validate_unique(expected);
     EXPECT_EQ(result_set, expected_set);

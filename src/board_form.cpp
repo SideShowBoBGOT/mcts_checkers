@@ -3,7 +3,7 @@
 #include <mcts_checkers/checkers_data.hpp>
 #include <tl/optional.hpp>
 
-namespace mcts_checkers::board_form {
+namespace mcts_checkers::board {
 
     Form::Form()=default;
 
@@ -33,6 +33,10 @@ namespace mcts_checkers::board_form {
     ImVec2 calc_mouse_local_window_pos() {
         return ImGui::GetMousePos() - ImGui::GetCursorScreenPos();
     }
+
+    // ImVec2 calc_cell_top_left(const Vector<uint8_t> board_index) {
+
+    // }
 
     void draw_hovered_cell() {
         if(not ImGui::IsWindowHovered(ImGuiHoveredFlags_None)) return;
@@ -66,7 +70,7 @@ namespace mcts_checkers::board_form {
         return is_even(cell_index.y) == is_even(cell_index.x);
     }
 
-    tl::optional<CheckersIndex> try_convert_board_vector_to_checker_index(const Vector<uint8_t> cell_index) {
+    tl::optional<CheckerIndex> try_convert_board_vector_to_checker_index(const Vector<uint8_t> cell_index) {
         if(is_white_cell(cell_index)) {
             return tl::nullopt;
         }
@@ -100,7 +104,7 @@ namespace mcts_checkers::board_form {
             ) {
                 ImGui::GetWindowDrawList()->AddRect(real_p_min, real_p_max, GREEN_COLOR, 2, 0, 8);
                 if(ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
-                    state_changer.change_state(StateSelected{checker_index, game_data});
+                    state_changer.change_state(selected::Form{checker_index, game_data});
                 }
                 return;
             }
@@ -108,11 +112,53 @@ namespace mcts_checkers::board_form {
         ImGui::GetWindowDrawList()->AddRect(real_p_min, real_p_max, YELLOW_COLOR, 2, 0, 8);
     }
 
-    StateSelected::StateSelected(const CheckersIndex checker_index, const GameData& game_data) {
-        // collect_attacks(game_data.checkers, checker_index);
-    }
+    namespace selected {
 
-    void StateSelected::iter(const ProtocolStateChanger<Form> state_changer, const GameData& checkers_data) {
+        MoveActionForm::MoveActionForm(std::vector<MoveAction>&& actions)
+            : m_actions{utils::checked_move(actions)} {}
+
+        void MoveActionForm::iter(ProtocolStateChanger<Form> state_changer, const GameData& checkers_data) const {
+            // const auto cell_size = calc_cell_size();
+            // constexpr auto padding_percentage = 0.3;
+            // const auto padding = cell_size * padding_percentage;
+            // const auto form_pos = ImGui::GetCursorScreenPos();
+            // for(const auto& action : m_actions) {
+            //     const auto board_index = convert_board_index_to_board_vector(action._val);
+            //     const auto p_min = cell_size * ImVec2(board_index.x, board_index.y) + form_pos;
+            //     const auto p_max = p_min + cell_size;
+            //     const auto padded_p_min = p_min + padding;
+            //     const auto padded_p_max = p_max - padding;
+            //     ImGui::GetWindowDrawList()->AddRectFilled(padded_p_min, padded_p_max, GREEN_COLOR);
+            // }
+        }
+
+        void AttackActionForm::iter(ProtocolStateChanger<Form> state_changer, const GameData &checkers_data) const {
+
+        }
+
+
+        State determine_state(const CheckerIndex checker_index, const GameData& game_data) {
+            auto attacks = collect_attacks(game_data.checkers, checker_index);
+            if(not attacks.first.empty()) {
+                return AttackActionForm();
+            }
+            return MoveActionForm(collect_moves(game_data.checkers, checker_index));
+        }
+
+        Form::Form(const CheckerIndex checker_index, const GameData& game_data)
+            : m_index{checker_index}, m_state(determine_state(checker_index, game_data)) {}
+
+        void Form::iter(const ProtocolStateChanger<board::Form> state_changer, const GameData& checkers_data) {
+
+            std::visit([this, &checkers_data](auto& state) {
+                state.iter(*this, checkers_data);
+            }, m_state);
+        }
+
+        void Form::change_state(State&& state) {
+            m_state = utils::checked_move(state);
+        }
+
     }
 
     void StateSelectionConfirmed::iter(const ProtocolStateChanger<Form> state_changer, const GameData& checkers_data) {
@@ -147,7 +193,7 @@ namespace mcts_checkers::board_form {
         const auto pawn_radius = half_cell_size * 0.8;
         const auto king_hat_radius = half_cell_size / 2;
         const auto form_pos = ImGui::GetCursorScreenPos();
-        auto checker_index = CheckersIndex{0};
+        auto checker_index = CheckerIndex{0};
         for(uint8_t y = 0; y < CELLS_PER_SIDE; ++y) {
             for(uint8_t x = y % 2 == 0 ? 1 : 0; x < CELLS_PER_SIDE; x += 2, ++checker_index) {
                 if(not data.checkers.m_is_in_place[checker_index]) continue;
