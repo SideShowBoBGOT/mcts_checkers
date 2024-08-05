@@ -34,32 +34,22 @@ namespace mcts_checkers::board {
         return ImGui::GetMousePos() - ImGui::GetCursorScreenPos();
     }
 
-    ImVec2 calc_cell_top_left(const BoardVector board_index) {
-
+    ImVec2 convert_board_vector_to_imvec(const BoardVector board_index) {
+        return ImVec2{
+            static_cast<float>(board_index.x),
+            static_cast<float>(board_index.y)
+        };
     }
 
-    void draw_hovered_cell() {
-        if(not ImGui::IsWindowHovered(ImGuiHoveredFlags_None)) return;
+    BoardVector convert_imvec_to_board_vector(const ImVec2 imvec) {
+        return BoardVector{
+            static_cast<uint8_t>(imvec.x),
+            static_cast<uint8_t>(imvec.y)
+        };
+    }
 
-        const auto mouse_pos = calc_mouse_local_window_pos();
-        // std::printf("Mouse pos: (%f, %f)\n", mouse_pos.x, mouse_pos.y);
-
-        const auto cell_size = calc_cell_size();
-        const auto float_cell_index = mouse_pos / cell_size;
-        const auto cell_index = ImVec2(
-            static_cast<short>(float_cell_index.x),
-            static_cast<short>(float_cell_index.y)
-        );
-
-        const auto p_min = cell_size * cell_index;
-        const auto p_max = p_min + cell_size;
-
-        const auto form_pos = ImGui::GetCursorScreenPos();
-
-        const auto real_p_min = p_min + form_pos;
-        const auto real_p_max = p_max + form_pos;
-
-        ImGui::GetWindowDrawList()->AddRect(real_p_min, real_p_max, BLUE_COLOR, 2, 0, 8);
+    ImVec2 calc_cell_top_left(const BoardVector board_index) {
+        return calc_cell_size() * convert_board_vector_to_imvec(board_index) + ImGui::GetCursorScreenPos();
     }
 
     constexpr uint8_t convert_board_index(const ImVec2ih board_index) {
@@ -77,39 +67,36 @@ namespace mcts_checkers::board {
         return convert_board_vector_to_checker_index(cell_index);
     }
 
+    BoardVector calc_hovered_cell() {
+        return convert_imvec_to_board_vector(calc_mouse_local_window_pos() / calc_cell_size());
+    }
+
+    void draw_hovered_cell(const BoardVector checker_board_vector, const ImU32 color) {
+        const auto cell_size = calc_cell_size();
+        const auto p_min = calc_cell_top_left(checker_board_vector);
+        const auto p_max = p_min + cell_size;
+        ImGui::GetWindowDrawList()->AddRect(p_min, p_max, color, 0, 0, 8);
+    }
+
     void StateUnselected::iter(const ProtocolStateChanger<Form> state_changer, const GameData& game_data) {
         if(not ImGui::IsWindowHovered(ImGuiHoveredFlags_None)) return;
 
-        const auto mouse_pos = calc_mouse_local_window_pos();
-        const auto cell_size = calc_cell_size();
-        const auto float_cell_index = mouse_pos / cell_size;
-        const auto cell_index = BoardVector{
-            static_cast<uint8_t>(float_cell_index.x),
-            static_cast<uint8_t>(float_cell_index.y)
-        };
+        const auto checker_board_vector = calc_hovered_cell();
 
-        const auto p_min = cell_size * ImVec2(cell_index.x, cell_index.y);
-        const auto p_max = p_min + cell_size;
-
-        const auto form_pos = ImGui::GetCursorScreenPos();
-
-        const auto real_p_min = p_min + form_pos;
-        const auto real_p_max = p_max + form_pos;
-
-        if(const auto checker_index_opt = try_convert_board_vector_to_checker_index(cell_index)) {
+        if(const auto checker_index_opt = try_convert_board_vector_to_checker_index(checker_board_vector)) {
             const auto checker_index = *checker_index_opt;
             if(
                 game_data.checkers.m_is_in_place[checker_index]
                 and game_data.checkers.m_player_index[checker_index] == game_data.m_current_player_index
             ) {
-                ImGui::GetWindowDrawList()->AddRect(real_p_min, real_p_max, GREEN_COLOR, 2, 0, 8);
+                draw_hovered_cell(checker_board_vector, GREEN_COLOR);
                 if(ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
                     state_changer.change_state(selected::Form{checker_index, game_data});
                 }
                 return;
             }
         }
-        ImGui::GetWindowDrawList()->AddRect(real_p_min, real_p_max, YELLOW_COLOR, 2, 0, 8);
+        draw_hovered_cell(checker_board_vector, YELLOW_COLOR);
     }
 
     namespace selected {
@@ -118,18 +105,27 @@ namespace mcts_checkers::board {
             : m_actions{utils::checked_move(actions)} {}
 
         void MoveActionForm::iter(ProtocolStateChanger<Form> state_changer, const GameData& checkers_data) const {
-            // const auto cell_size = calc_cell_size();
-            // constexpr auto padding_percentage = 0.3;
-            // const auto padding = cell_size * padding_percentage;
-            // const auto form_pos = ImGui::GetCursorScreenPos();
-            // for(const auto& action : m_actions) {
-            //     const auto board_index = convert_board_index_to_board_vector(action._val);
-            //     const auto p_min = cell_size * ImVec2(board_index.x, board_index.y) + form_pos;
-            //     const auto p_max = p_min + cell_size;
-            //     const auto padded_p_min = p_min + padding;
-            //     const auto padded_p_max = p_max - padding;
-            //     ImGui::GetWindowDrawList()->AddRectFilled(padded_p_min, padded_p_max, GREEN_COLOR);
-            // }
+            const auto cell_size = calc_cell_size();
+            constexpr auto padding_percentage = 0.3;
+            const auto padding = cell_size * padding_percentage;
+            for(const auto& action : m_actions) {
+                const auto p_min = calc_cell_top_left(convert_board_index_to_board_vector(action._val));
+                const auto p_max = p_min + cell_size;
+                const auto padded_p_min = p_min + padding;
+                const auto padded_p_max = p_max - padding;
+                ImGui::GetWindowDrawList()->AddRectFilled(padded_p_min, padded_p_max, GREEN_COLOR);
+            }
+
+            const auto checker_board_vector = calc_hovered_cell();
+            const auto it = std::find_if(std::begin(m_actions), std::end(m_actions),
+            [index=convert_board_vector_to_board_index(checker_board_vector)](const MoveAction action) {
+                return action._val == index;
+            });
+            if(it != std::end(m_actions)) {
+                draw_hovered_cell(checker_board_vector, GREEN_COLOR);
+            } else {
+                draw_hovered_cell(checker_board_vector, YELLOW_COLOR);
+            }
         }
 
         void AttackActionForm::iter(ProtocolStateChanger<Form> state_changer, const GameData &checkers_data) const {
@@ -167,21 +163,16 @@ namespace mcts_checkers::board {
 
     static void draw_rects() {
         const auto draw_list = ImGui::GetWindowDrawList();
-        const auto form_pos = ImGui::GetCursorScreenPos();
         const auto cell_size = calc_cell_size();
         auto is_white = true;
-        auto dev_y = form_pos.y;
-        for(uint16_t y = 0; y < CELLS_PER_SIDE; ++y) {
-            auto dev_x = form_pos.x;
-            for(uint16_t x = 0; x < CELLS_PER_SIDE; ++x) {
-                const auto deviation = ImVec2{dev_x, dev_y};
+        for(uint8_t y = 0; y < CELLS_PER_SIDE; ++y) {
+            for(uint8_t x = 0; x < CELLS_PER_SIDE; ++x) {
+                const auto p_min = calc_cell_top_left(BoardVector{x, y});
                 draw_list->AddRectFilled(
-                    deviation, deviation + cell_size, is_white ? BOARD_CELL_ONE_COLOR : BOARD_CELL_TWO_COLOR
+                    p_min, p_min + cell_size, is_white ? BOARD_CELL_ONE_COLOR : BOARD_CELL_TWO_COLOR
                 );
                 is_white = not is_white;
-                dev_x += cell_size.x;
             }
-            dev_y += cell_size.y;
             is_white = not is_white;
         }
     }
@@ -197,7 +188,7 @@ namespace mcts_checkers::board {
         for(uint8_t y = 0; y < CELLS_PER_SIDE; ++y) {
             for(uint8_t x = y % 2 == 0 ? 1 : 0; x < CELLS_PER_SIDE; x += 2, ++checker_index) {
                 if(not data.checkers.m_is_in_place[checker_index]) continue;
-                const auto center = ImVec2(x, y) * cell_size + half_cell_size + form_pos;
+                const auto center = calc_cell_top_left(BoardVector{x, y}) + half_cell_size;
                 const auto player_index = data.checkers.m_player_index[checker_index];
                 draw_list->AddEllipseFilled(center, pawn_radius, player_index ? PLAYER_ONE_PAWN_COLOR : PLAYER_TWO_PAWN_COLOR);
                 if(data.checkers.m_is_king[checker_index]) {
