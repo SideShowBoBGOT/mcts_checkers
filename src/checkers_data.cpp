@@ -73,7 +73,7 @@ namespace mcts_checkers {
         std::array<int8_t, 2>{-1, -1},
     };
 
-    std::vector<MoveAction> collect_moves(const CheckersData& data, const Vector<uint8_t> checker_board_vector) {
+    std::vector<MoveAction> collect_moves(const CheckersData& data, const BoardVector checker_board_vector) {
         return collect_moves(data, convert_board_vector_to_checker_index(checker_board_vector));
     }
 
@@ -94,7 +94,7 @@ namespace mcts_checkers {
                 auto x = static_cast<int8_t>(static_cast<int8_t>(checker_vector.x) + dev_x);
                 while(y != bound_y and x != bound_x) {
 
-                    const auto move_board_index = Vector{static_cast<uint8_t>(x), static_cast<uint8_t>(y)};
+                    const auto move_board_index = BoardVector{static_cast<uint8_t>(x), static_cast<uint8_t>(y)};
                     const auto move_checker_index = convert_board_vector_to_checker_index(move_board_index);
                     if(data.m_is_in_place[move_checker_index]) {
                         break;
@@ -110,7 +110,7 @@ namespace mcts_checkers {
         return actions;
     }
 
-    std::pair<std::vector<AttackAction>, uint64_t> collect_attacks(const CheckersData& data, const Vector<uint8_t> checker_board_vector) {
+    std::pair<std::vector<AttackAction>, uint64_t> collect_attacks(const CheckersData& data, const BoardVector checker_board_vector) {
         return collect_attacks(data, convert_board_vector_to_checker_index(checker_board_vector));
     }
 
@@ -130,7 +130,7 @@ namespace mcts_checkers {
                 auto y = static_cast<int8_t>(static_cast<int8_t>(checker_vector.y) + dev_y);
                 auto x = static_cast<int8_t>(static_cast<int8_t>(checker_vector.x) + dev_x);
                 while(y != bound_y and x != bound_x) {
-                    const auto enemy_board_index = Vector{static_cast<uint8_t>(x), static_cast<uint8_t>(y)};
+                    const auto enemy_board_index = BoardVector{static_cast<uint8_t>(x), static_cast<uint8_t>(y)};
                     const auto enemy_checker_index = convert_board_vector_to_checker_index(enemy_board_index);
                     if(
                         data.m_is_in_place[enemy_checker_index]
@@ -141,7 +141,7 @@ namespace mcts_checkers {
 
                         while(block_y != bound_y and block_x != bound_x) {
 
-                            const auto block_board_vector = Vector{static_cast<uint8_t>(block_x), static_cast<uint8_t>(block_y)};
+                            const auto block_board_vector = BoardVector{static_cast<uint8_t>(block_x), static_cast<uint8_t>(block_y)};
                             const auto block_checker_index = convert_board_vector_to_checker_index(block_board_vector);
 
                             if(data.m_is_in_place[block_checker_index]) break;

@@ -6,7 +6,7 @@
 struct TestData {
     mcts_checkers::BoardIndex board_index{strong::uninitialized};
     mcts_checkers::CheckerIndex checker_index{strong::uninitialized};
-    mcts_checkers::Vector<uint8_t> board_vector{};
+    mcts_checkers::BoardVector board_vector{};
 };
 
 namespace nlohmann {
@@ -14,7 +14,7 @@ namespace nlohmann {
     template<>
     struct adl_serializer<TestData> {
         static void from_json(const json& j, TestData& data) {
-            data.board_vector = j["board_vector"].get<mcts_checkers::Vector<uint8_t>>();
+            data.board_vector = j["board_vector"].get<mcts_checkers::BoardVector>();
             data.board_index = mcts_checkers::BoardIndex{j["board_index"].get<uint8_t>()};
             data.checker_index = mcts_checkers::CheckerIndex{j["checker_index"].get<uint8_t>()};
         }
@@ -22,7 +22,7 @@ namespace nlohmann {
 }
 namespace mcts_checkers {
     template<typename T>
-    bool operator==(const Vector<T>& first, const Vector<T> second) {
+    bool operator==(const BoardVector& first, const BoardVector second) {
         return first.x == second.x and first.y == second.y;
     }
 }

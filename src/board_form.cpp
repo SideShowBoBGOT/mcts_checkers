@@ -34,9 +34,9 @@ namespace mcts_checkers::board {
         return ImGui::GetMousePos() - ImGui::GetCursorScreenPos();
     }
 
-    // ImVec2 calc_cell_top_left(const Vector<uint8_t> board_index) {
+    ImVec2 calc_cell_top_left(const BoardVector board_index) {
 
-    // }
+    }
 
     void draw_hovered_cell() {
         if(not ImGui::IsWindowHovered(ImGuiHoveredFlags_None)) return;
@@ -66,11 +66,11 @@ namespace mcts_checkers::board {
         return board_index.y * CELLS_PER_SIDE + board_index.x;
     }
 
-    constexpr bool is_white_cell(const Vector<uint8_t> cell_index) {
+    constexpr bool is_white_cell(const BoardVector cell_index) {
         return is_even(cell_index.y) == is_even(cell_index.x);
     }
 
-    tl::optional<CheckerIndex> try_convert_board_vector_to_checker_index(const Vector<uint8_t> cell_index) {
+    tl::optional<CheckerIndex> try_convert_board_vector_to_checker_index(const BoardVector cell_index) {
         if(is_white_cell(cell_index)) {
             return tl::nullopt;
         }
@@ -83,7 +83,7 @@ namespace mcts_checkers::board {
         const auto mouse_pos = calc_mouse_local_window_pos();
         const auto cell_size = calc_cell_size();
         const auto float_cell_index = mouse_pos / cell_size;
-        const auto cell_index = Vector{
+        const auto cell_index = BoardVector{
             static_cast<uint8_t>(float_cell_index.x),
             static_cast<uint8_t>(float_cell_index.y)
         };

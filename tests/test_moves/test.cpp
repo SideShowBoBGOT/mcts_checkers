@@ -8,7 +8,7 @@
 #include <unordered_set>
 
 struct TestData {
-    mcts_checkers::Vector<uint8_t> checker_vector;
+    mcts_checkers::BoardVector checker_vector;
     mcts_checkers::CheckersData board;
     std::vector<mcts_checkers::BoardIndex> result;
 };
@@ -35,7 +35,7 @@ namespace nlohmann {
     template<>
     struct adl_serializer<TestData> {
         static void from_json(const json& j, TestData& data) {
-            data.checker_vector = j["checker_vector"].get<mcts_checkers::Vector<uint8_t>>();
+            data.checker_vector = j["checker_vector"].get<mcts_checkers::BoardVector>>();
             data.board = j["board"].get<mcts_checkers::CheckersData>();
             data.result = j["result"].get<std::vector<mcts_checkers::BoardIndex>>();
         }

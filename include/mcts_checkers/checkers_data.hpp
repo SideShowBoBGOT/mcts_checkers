@@ -22,10 +22,9 @@ namespace mcts_checkers {
         std::vector<AttackAction> m_child_actions{};
     };
 
-    template<typename T>
-    struct Vector {
-        T x{};
-        T y{};
+    struct BoardVector {
+        uint8_t x{};
+        uint8_t y{};
     };
 
     template<std::integral T>
@@ -37,18 +36,18 @@ namespace mcts_checkers {
         return coord < 0 or coord >= static_cast<int8_t>(BOARD_CELLS_COUNT);
     }
 
-    constexpr Vector<uint8_t> convert_board_index_to_board_vector(const BoardIndex board_index) {
+    constexpr BoardVector convert_board_index_to_board_vector(const BoardIndex board_index) {
         return {
             static_cast<uint8_t>(board_index._val % CELLS_PER_SIDE),
             static_cast<uint8_t>(board_index._val / CELLS_PER_SIDE),
         };
     }
 
-    constexpr BoardIndex convert_board_vector_to_board_index(const Vector<uint8_t> board_vector) {
+    constexpr BoardIndex convert_board_vector_to_board_index(const BoardVector board_vector) {
         return BoardIndex{board_vector.y * CELLS_PER_SIDE + board_vector.x};
     }
 
-    constexpr CheckerIndex convert_board_vector_to_checker_index(const Vector<uint8_t> board_vector) {
+    constexpr CheckerIndex convert_board_vector_to_checker_index(const BoardVector board_vector) {
         return CheckerIndex{static_cast<uint8_t>(board_vector.y * CHECKERS_PER_ROW + board_vector.x / 2)};
     }
 
@@ -63,13 +62,13 @@ namespace mcts_checkers {
         return BoardIndex{static_cast<uint8_t>(y * CELLS_PER_SIDE + x * 2 + is_even(y))};
     }
 
-    constexpr Vector<uint8_t> convert_checker_index_to_board_vector(const CheckerIndex checker_index) {
+    constexpr BoardVector convert_checker_index_to_board_vector(const CheckerIndex checker_index) {
         const auto board_index = convert_checker_index_to_board_index(checker_index);
         return convert_board_index_to_board_vector(board_index);
     }
 
     std::vector<MoveAction> collect_moves(const CheckersData& data, CheckerIndex checker_index);
-    std::vector<MoveAction> collect_moves(const CheckersData& data, Vector<uint8_t> checker_board_vector);
-    std::pair<std::vector<AttackAction>, uint64_t> collect_attacks(const CheckersData& data, Vector<uint8_t> checker_board_vector);
+    std::vector<MoveAction> collect_moves(const CheckersData& data, BoardVector checker_board_vector);
+    std::pair<std::vector<AttackAction>, uint64_t> collect_attacks(const CheckersData& data, BoardVector checker_board_vector);
     std::pair<std::vector<AttackAction>, uint64_t> collect_attacks(const CheckersData& data, CheckerIndex checker_index);
 }

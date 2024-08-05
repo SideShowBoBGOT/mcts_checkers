@@ -5,8 +5,8 @@
 
 namespace nlohmann {
     template<>
-    struct adl_serializer<mcts_checkers::Vector<uint8_t>> {
-        static void from_json(const json& j, mcts_checkers::Vector<uint8_t>& data);
+    struct adl_serializer<mcts_checkers::BoardVector> {
+        static void from_json(const json& j, mcts_checkers::BoardVector& data);
     };
 
     template<>
