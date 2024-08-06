@@ -17,4 +17,8 @@ namespace mcts_checkers {
     using CheckersBitset = strong::type<std::bitset<CHEKCERS_CELLS_COUNT>, struct CheckersBitset_, strong::indexed<CheckerIndex>>;
     using BoardIndex = strong::type<uint8_t, struct BoardIndex_, strong::equality, strong::hashable>;
     using MoveAction = strong::type<BoardIndex, struct MoveAction_>;
+    struct BoardVector {
+        uint8_t x{};
+        uint8_t y{};
+    };
 }

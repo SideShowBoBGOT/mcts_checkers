@@ -31,21 +31,21 @@ namespace mcts_checkers::board {
 
     namespace selected {
 
-        class Form;
+        struct MoveActionForm {
+            explicit MoveActionForm(std::vector<MoveAction>&& actions);
+            std::vector<MoveAction> m_actions;
+        };
 
-        class MoveActionForm {
+        struct AttackActionForm {
+        };
+
+        class SelectionConfirmed {
             public:
-                MoveActionForm(std::vector<MoveAction>&& actions);
+                SelectionConfirmed(BoardVector board_vector);
                 void iter(ProtocolStateChanger<Form> state_changer, const GameData& checkers_data) const;
 
             private:
-                std::vector<MoveAction> m_actions;
-
-        };
-
-        class AttackActionForm {
-            public:
-                void iter(ProtocolStateChanger<Form> state_changer, const GameData& checkers_data) const;
+                BoardVector m_board_vector;
         };
 
         using State = std::variant<MoveActionForm, AttackActionForm>;
@@ -54,7 +54,6 @@ namespace mcts_checkers::board {
             public:
                 Form(CheckerIndex checker_index, const GameData& game_data);
                 void iter(ProtocolStateChanger<board::Form> state_changer, const GameData& checkers_data);
-                void change_state(State&& state);
 
             private:
                 CheckerIndex m_index;

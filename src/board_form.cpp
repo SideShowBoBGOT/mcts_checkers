@@ -104,11 +104,15 @@ namespace mcts_checkers::board {
         MoveActionForm::MoveActionForm(std::vector<MoveAction>&& actions)
             : m_actions{utils::checked_move(actions)} {}
 
-        void MoveActionForm::iter(ProtocolStateChanger<Form> state_changer, const GameData& checkers_data) const {
+        struct StateNotChange{};
+
+        std::variant<StateNotChange, SelectionConfirmed> iter_state(
+            const MoveActionForm& form
+        ) {
             const auto cell_size = calc_cell_size();
             constexpr auto padding_percentage = 0.3;
             const auto padding = cell_size * padding_percentage;
-            for(const auto& action : m_actions) {
+            for(const auto& action : form.m_actions) {
                 const auto p_min = calc_cell_top_left(convert_board_index_to_board_vector(action._val));
                 const auto p_max = p_min + cell_size;
                 const auto padded_p_min = p_min + padding;
@@ -116,22 +120,28 @@ namespace mcts_checkers::board {
                 ImGui::GetWindowDrawList()->AddRectFilled(padded_p_min, padded_p_max, GREEN_COLOR);
             }
 
-            const auto checker_board_vector = calc_hovered_cell();
-            const auto it = std::find_if(std::begin(m_actions), std::end(m_actions),
-            [index=convert_board_vector_to_board_index(checker_board_vector)](const MoveAction action) {
-                return action._val == index;
-            });
-            if(it != std::end(m_actions)) {
-                draw_hovered_cell(checker_board_vector, GREEN_COLOR);
-            } else {
-                draw_hovered_cell(checker_board_vector, YELLOW_COLOR);
+            if(ImGui::IsWindowHovered(ImGuiHoveredFlags_None)) {
+                const auto checker_board_vector = calc_hovered_cell();
+                const auto it = std::find_if(std::begin(form.m_actions), std::end(form.m_actions),
+                [index=convert_board_vector_to_board_index(checker_board_vector)](const MoveAction action) {
+                    return action._val == index;
+                });
+                if(it != std::end(form.m_actions)) {
+                    draw_hovered_cell(checker_board_vector, GREEN_COLOR);
+                    if(ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+                        return SelectionConfirmed{checker_board_vector};
+                    }
+                } else {
+                    draw_hovered_cell(checker_board_vector, YELLOW_COLOR);
+                }
             }
+            return StateNotChange{};
         }
 
-        void AttackActionForm::iter(ProtocolStateChanger<Form> state_changer, const GameData &checkers_data) const {
+        std::variant<StateNotChange, SelectionConfirmed> iter_state(const AttackActionForm&) {}
 
-        }
-
+        SelectionConfirmed::SelectionConfirmed(const BoardVector board_vector)
+            : m_board_vector{board_vector} {}
 
         State determine_state(const CheckerIndex checker_index, const GameData& game_data) {
             auto attacks = collect_attacks(game_data.checkers, checker_index);
@@ -145,14 +155,11 @@ namespace mcts_checkers::board {
             : m_index{checker_index}, m_state(determine_state(checker_index, game_data)) {}
 
         void Form::iter(const ProtocolStateChanger<board::Form> state_changer, const GameData& checkers_data) {
-
-            std::visit([this, &checkers_data](auto& state) {
-                state.iter(*this, checkers_data);
+            draw_hovered_cell(convert_checker_index_to_board_vector(m_index), BLUE_COLOR);
+            const auto new_state = std::visit([this](const auto& state) {
+                return iter_state(state);
             }, m_state);
-        }
 
-        void Form::change_state(State&& state) {
-            m_state = utils::checked_move(state);
         }
 
     }

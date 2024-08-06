@@ -22,11 +22,6 @@ namespace mcts_checkers {
         std::vector<AttackAction> m_child_actions{};
     };
 
-    struct BoardVector {
-        uint8_t x{};
-        uint8_t y{};
-    };
-
     template<std::integral T>
     constexpr bool is_even(const T value) {
         return value % 2 == 0;
