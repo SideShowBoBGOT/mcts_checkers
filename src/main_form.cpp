@@ -14,7 +14,7 @@ namespace mcts_checkers {
 
         ImGui::SameLine();
 
-        m_board_form.iter(GameData());
+        m_board_form.iter_sss(GameData());
 
         ImGui::End();
     }

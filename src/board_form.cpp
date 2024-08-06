@@ -78,8 +78,10 @@ namespace mcts_checkers::board {
         ImGui::GetWindowDrawList()->AddRect(p_min, p_max, color, 0, 0, 8);
     }
 
-    void StateUnselected::iter(const ProtocolStateChanger<Form> state_changer, const GameData& game_data) {
-        if(not ImGui::IsWindowHovered(ImGuiHoveredFlags_None)) return;
+    struct StateNotChange{};
+
+    std::variant<StateNotChange, selected::Form> iter(StateUnselected, const GameData& game_data) {
+        if(not ImGui::IsWindowHovered(ImGuiHoveredFlags_None)) return StateNotChange{};
 
         const auto checker_board_vector = calc_hovered_cell();
 
@@ -91,20 +93,18 @@ namespace mcts_checkers::board {
             ) {
                 draw_hovered_cell(checker_board_vector, GREEN_COLOR);
                 if(ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
-                    state_changer.change_state(selected::Form{checker_index, game_data});
+                    return selected::Form{checker_index, game_data};
                 }
-                return;
             }
         }
         draw_hovered_cell(checker_board_vector, YELLOW_COLOR);
+        return StateNotChange{};
     }
 
     namespace selected {
 
         MoveActionForm::MoveActionForm(std::vector<MoveAction>&& actions)
             : m_actions{utils::checked_move(actions)} {}
-
-        struct StateNotChange{};
 
         std::variant<StateNotChange, SelectionConfirmed> iter_state(
             const MoveActionForm& form
@@ -138,10 +138,9 @@ namespace mcts_checkers::board {
             return StateNotChange{};
         }
 
-        std::variant<StateNotChange, SelectionConfirmed> iter_state(const AttackActionForm&) {}
-
-        SelectionConfirmed::SelectionConfirmed(const BoardVector board_vector)
-            : m_board_vector{board_vector} {}
+        std::variant<StateNotChange, SelectionConfirmed> iter_state(const AttackActionForm&) {
+            return StateNotChange{};
+        }
 
         State determine_state(const CheckerIndex checker_index, const GameData& game_data) {
             auto attacks = collect_attacks(game_data.checkers, checker_index);
@@ -154,19 +153,17 @@ namespace mcts_checkers::board {
         Form::Form(const CheckerIndex checker_index, const GameData& game_data)
             : m_index{checker_index}, m_state(determine_state(checker_index, game_data)) {}
 
-        void Form::iter(const ProtocolStateChanger<board::Form> state_changer, const GameData& checkers_data) {
-            draw_hovered_cell(convert_checker_index_to_board_vector(m_index), BLUE_COLOR);
-            const auto new_state = std::visit([this](const auto& state) {
-                return iter_state(state);
-            }, m_state);
-
-        }
-
     }
 
-    void StateSelectionConfirmed::iter(const ProtocolStateChanger<Form> state_changer, const GameData& checkers_data) {
-
+    StateNotChange iter(const selected::Form& form, const GameData& checkers_data) {
+        draw_hovered_cell(convert_checker_index_to_board_vector(form.m_index), BLUE_COLOR);
+        const auto new_state = std::visit([](const auto& state) {
+            return iter_state(state);
+        }, form.m_state);
+        return StateNotChange{};
     }
+
+    StateNotChange iter(StateSelectionConfirmed, const GameData& checkers_data) { return StateNotChange{}; }
 
     static void draw_rects() {
         const auto draw_list = ImGui::GetWindowDrawList();
@@ -205,15 +202,20 @@ namespace mcts_checkers::board {
         }
     }
 
-    void Form::iter(const GameData& checkers_data) {
+    void Form::iter_sss(const GameData& checkers_data) {
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
         ImGui::BeginChild("BoardForm", ImVec2(0, -1), true, ImGuiWindowFlags_NoScrollWithMouse);
         draw_rects();
         draw_checkers(checkers_data);
 
-        std::visit([this, &checkers_data](auto& state) {
-            state.iter(*this, checkers_data);
+        auto new_state = std::visit([this, &checkers_data](auto& state) -> std::variant<StateNotChange, selected::Form> {
+            return iter(state, checkers_data);
         }, m_state);
+
+        std::visit(utils::overloaded{
+            [](const StateNotChange) {},
+            [this](selected::Form&& form) { m_state = utils::checked_move(form); }
+        }, utils::checked_move(new_state));
 
         ImGui::EndChild();
         ImGui::PopStyleVar();
