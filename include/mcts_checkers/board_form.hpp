@@ -14,7 +14,7 @@ namespace mcts_checkers::board {
     namespace selected {
 
         struct MoveActionForm {
-            explicit MoveActionForm(std::vector<MoveAction>&& actions);
+            CheckerIndex m_index;
             std::vector<MoveAction> m_actions;
         };
         struct AttackActionForm {};
@@ -31,7 +31,7 @@ namespace mcts_checkers::board {
         };
     }
 
-    struct StateSelectionConfirmed {};
+    struct StateSelectionConfirmed { BoardVector m_board_vector; };
 
     using State = std::variant<StateUnselected, selected::Form, StateSelectionConfirmed>;
 

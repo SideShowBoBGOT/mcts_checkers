@@ -20,6 +20,5 @@ namespace mcts_checkers {
         template<class... Ts>
         overloaded(Ts...) -> overloaded<Ts...>;
 
-
     }
 }
