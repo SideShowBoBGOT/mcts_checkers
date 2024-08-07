@@ -22,7 +22,7 @@ namespace mcts_checkers::board {
 
         namespace attack {
             struct Node {
-                std::optional<CheckerIndex> m_index;
+                std::optional<BoardIndex> m_index;
                 std::span<AttackAction> m_actions;
             };
 
