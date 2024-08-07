@@ -1,6 +1,7 @@
 #include <mcts_checkers/board_form.hpp>
 #include <mcts_checkers/utils.hpp>
 #include <mcts_checkers/checkers_data.hpp>
+#include <mcts_checkers/checkers_funcs.hpp>
 #include <tl/optional.hpp>
 
 namespace mcts_checkers::board {
@@ -165,8 +166,8 @@ namespace mcts_checkers::board {
             return StateNotChange{};
         }
 
-        attack::Form::Form(std::vector<AttackAction>&& actions)
-            : m_actions{std::move(actions)} {
+        attack::Form::Form(const CheckerIndex index, std::vector<AttackAction>&& actions)
+            : m_index{index}, m_actions{std::move(actions)} {
             m_nodes.emplace_back(std::nullopt, m_actions);
         }
 
@@ -180,13 +181,32 @@ namespace mcts_checkers::board {
                 }
             }
 
+            if(ImGui::IsWindowHovered(ImGuiHoveredFlags_None)) {
+                const auto checker_board_vector = calc_hovered_cell();
+                if(const auto checker_index_opt = try_convert_board_vector_to_checker_index(checker_board_vector)) {
+                    const auto checker_index = * checker_index_opt;
+                    if(checker_index != form.m_index) {
+                        if(
+                            checkers_data.checkers.m_is_in_place[checker_index]
+                            and checkers_data.checkers.m_player_index[checker_index] == checkers_data.m_current_player_index
+                        ) {
+                            draw_hovered_cell(checker_board_vector, GREEN_COLOR);
+                            if(ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+                                return OtherCheckerSelected{checker_index};
+                            }
+                        }
+                    }
+                }
+
+                draw_hovered_cell(checker_board_vector, YELLOW_COLOR);
+            }
             return StateNotChange{};
         }
 
         State determine_state(const CheckerIndex checker_index, const GameData& game_data) {
             auto attacks = collect_attacks(game_data.checkers, checker_index);
             if(not attacks.first.empty()) {
-                return attack::Form(utils::checked_move(attacks.first));
+                return attack::Form(checker_index, utils::checked_move(attacks.first));
             }
             return MoveActionForm{checker_index, collect_moves(game_data.checkers, checker_index)};
         }

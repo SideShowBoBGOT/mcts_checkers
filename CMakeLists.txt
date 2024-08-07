@@ -21,6 +21,8 @@ add_library(mcts_checkers
         include/mcts_checkers/mcts.hpp
         src/mcts.cpp
         include/mcts_checkers/checkers_types.hpp
+        include/mcts_checkers/checkers_funcs.hpp
+        src/checkers_funcs.cpp
 )
 target_include_directories(mcts_checkers PUBLIC include)
 target_link_libraries(mcts_checkers

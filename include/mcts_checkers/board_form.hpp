@@ -27,7 +27,8 @@ namespace mcts_checkers::board {
             };
 
             struct Form {
-                Form(std::vector<AttackAction>&& actions);
+                Form(CheckerIndex index, std::vector<AttackAction>&& actions);
+                CheckerIndex m_index;
                 std::vector<Node> m_nodes;
                 std::vector<AttackAction> m_actions;
             };
