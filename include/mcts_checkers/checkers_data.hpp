@@ -17,11 +17,6 @@ namespace mcts_checkers {
         bool m_current_player_index = true;
     };
 
-    struct AttackAction {
-        BoardIndex m_board_index{strong::uninitialized};
-        std::vector<AttackAction> m_child_actions{};
-    };
-
     template<std::integral T>
     constexpr bool is_even(const T value) {
         return value % 2 == 0;

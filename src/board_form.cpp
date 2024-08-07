@@ -17,6 +17,8 @@ namespace mcts_checkers::board {
 
     static const auto BLUE_COLOR = ImGui::ColorConvertFloat4ToU32(ImVec4(0.0f, 0.0f, 1.0f, 1.0f));
     static const auto RED_COLOR = ImGui::ColorConvertFloat4ToU32(ImVec4(1.0f, 0.0f, 0.0f, 1.0f));
+    static const auto PINK_COLOR = ImGui::ColorConvertFloat4ToU32(ImVec4(normalize_rgba_color({255.0f, 0.f, 127.0f, 255.0f})));
+
     static const auto PURPLE_COLOR = ImGui::ColorConvertFloat4ToU32(normalize_rgba_color({153.0f, 51.f, 255.0f, 255.0f}));
 
     static const auto YELLOW_COLOR = ImGui::ColorConvertFloat4ToU32(ImVec4(1.0f, 1.0f, 0.0f, 1.0f));
@@ -110,19 +112,23 @@ namespace mcts_checkers::board {
         using OtherCheckerSelected = strong::type<CheckerIndex, struct OtherCheckerSelected_>;
         using IterationResult = std::variant<StateNotChange, SelectionConfirmed, OtherCheckerSelected>;
 
+        void draw_action_rect(const BoardVector board_vector, const ImU32 color) {
+            const auto cell_size = calc_cell_size();
+            constexpr auto padding_percentage = 0.3;
+            const auto padding = cell_size * padding_percentage;
+            const auto p_min = calc_cell_top_left(board_vector);
+            const auto p_max = p_min + cell_size;
+            const auto padded_p_min = p_min + padding;
+            const auto padded_p_max = p_max - padding;
+            ImGui::GetWindowDrawList()->AddRectFilled(padded_p_min, padded_p_max, color);
+        }
+
         IterationResult iter_state(
             const MoveActionForm& form,
             const GameData& checkers_data
         ) {
-            const auto cell_size = calc_cell_size();
-            constexpr auto padding_percentage = 0.3;
-            const auto padding = cell_size * padding_percentage;
             for(const auto& action : form.m_actions) {
-                const auto p_min = calc_cell_top_left(convert_board_index_to_board_vector(action._val));
-                const auto p_max = p_min + cell_size;
-                const auto padded_p_min = p_min + padding;
-                const auto padded_p_max = p_max - padding;
-                ImGui::GetWindowDrawList()->AddRectFilled(padded_p_min, padded_p_max, PURPLE_COLOR);
+                draw_action_rect(convert_board_index_to_board_vector(action._val), PURPLE_COLOR);
             }
 
             if(ImGui::IsWindowHovered(ImGuiHoveredFlags_None)) {
@@ -159,14 +165,28 @@ namespace mcts_checkers::board {
             return StateNotChange{};
         }
 
-        IterationResult iter_state(const AttackActionForm&, const GameData& checkers_data) {
+        attack::Form::Form(std::vector<AttackAction>&& actions)
+            : m_actions{std::move(actions)} {
+            m_nodes.emplace_back(std::nullopt, m_actions);
+        }
+
+        IterationResult iter_state(const attack::Form& form, const GameData& checkers_data) {
+            for(const auto& node : form.m_nodes) {
+                if(node.m_index) {
+                    draw_action_rect(convert_checker_index_to_board_vector(*node.m_index), RED_COLOR);
+                }
+                for(const auto& action : node.m_actions) {
+                    draw_action_rect(convert_board_index_to_board_vector(action.m_board_index), PINK_COLOR);
+                }
+            }
+
             return StateNotChange{};
         }
 
         State determine_state(const CheckerIndex checker_index, const GameData& game_data) {
             auto attacks = collect_attacks(game_data.checkers, checker_index);
             if(not attacks.first.empty()) {
-                return AttackActionForm();
+                return attack::Form(utils::checked_move(attacks.first));
             }
             return MoveActionForm{checker_index, collect_moves(game_data.checkers, checker_index)};
         }
@@ -179,7 +199,7 @@ namespace mcts_checkers::board {
     IterationResult iter(selected::Form& form, const GameData& checkers_data) {
         draw_hovered_cell(convert_checker_index_to_board_vector(form.m_index), BLUE_COLOR);
         auto new_state = std::visit([&checkers_data](const auto& state) {
-            return iter_state(state, checkers_data);
+            return selected::iter_state(state, checkers_data);
         }, form.m_state);
         return std::visit(utils::overloaded{
             [](StateNotChange) -> IterationResult {

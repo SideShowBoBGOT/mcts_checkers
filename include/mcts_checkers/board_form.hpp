@@ -2,6 +2,8 @@
 #include <mcts_checkers/checkers_types.hpp>
 #include <variant>
 #include <vector>
+#include <optional>
+#include <span>
 
 namespace mcts_checkers {
     struct GameData;
@@ -17,12 +19,25 @@ namespace mcts_checkers::board {
             CheckerIndex m_index;
             std::vector<MoveAction> m_actions;
         };
-        struct AttackActionForm {};
+
+        namespace attack {
+            struct Node {
+                std::optional<CheckerIndex> m_index;
+                std::span<AttackAction> m_actions;
+            };
+
+            struct Form {
+                Form(std::vector<AttackAction>&& actions);
+                std::vector<Node> m_nodes;
+                std::vector<AttackAction> m_actions;
+            };
+        }
+
         struct SelectionConfirmed {
             BoardVector m_board_vector;
         };
 
-        using State = std::variant<MoveActionForm, AttackActionForm>;
+        using State = std::variant<MoveActionForm, attack::Form>;
 
         struct Form {
             Form(CheckerIndex checker_index, const GameData& game_data);

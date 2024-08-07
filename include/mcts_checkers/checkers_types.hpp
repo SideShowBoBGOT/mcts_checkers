@@ -21,4 +21,8 @@ namespace mcts_checkers {
         uint8_t x{};
         uint8_t y{};
     };
+    struct AttackAction {
+        BoardIndex m_board_index{strong::uninitialized};
+        std::vector<AttackAction> m_child_actions{};
+    };
 }
