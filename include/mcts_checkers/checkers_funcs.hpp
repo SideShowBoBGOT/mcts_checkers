@@ -47,6 +47,7 @@ namespace mcts_checkers {
 
     std::vector<MoveAction> collect_moves(const CheckersData& data, CheckerIndex checker_index);
     std::vector<MoveAction> collect_moves(const CheckersData& data, BoardVector checker_board_vector);
-    std::pair<std::vector<AttackAction>, uint64_t> collect_attacks(const CheckersData& data, BoardVector checker_board_vector);
-    std::pair<std::vector<AttackAction>, uint64_t> collect_attacks(const CheckersData& data, CheckerIndex checker_index);
+
+    CollectAttacksResult collect_attacks(const CheckersData& data, BoardVector checker_board_vector);
+    CollectAttacksResult collect_attacks(const CheckersData& data, CheckerIndex checker_index);
 }

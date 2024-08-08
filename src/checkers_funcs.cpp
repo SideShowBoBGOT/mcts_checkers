@@ -56,11 +56,11 @@ static constexpr auto DEVIATIONS = std::array{
         return actions;
     }
 
-    std::pair<std::vector<AttackAction>, uint64_t> collect_attacks(const CheckersData& data, const BoardVector checker_board_vector) {
+    CollectAttacksResult collect_attacks(const CheckersData& data, const BoardVector checker_board_vector) {
         return collect_attacks(data, convert_board_vector_to_checker_index(checker_board_vector));
     }
 
-    std::pair<std::vector<AttackAction>, uint64_t> collect_attacks(
+    CollectAttacksResult collect_attacks(
         const CheckersData& data,
         const CheckerIndex checker_index
     ) {

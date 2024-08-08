@@ -11,13 +11,25 @@ namespace mcts_checkers {
 
 namespace mcts_checkers::board {
 
-    struct StateUnselected {};
+    namespace unselected {
+        struct AttackForm {
+            std::vector<std::pair<CheckerIndex, CollectAttacksResult>> data{};
+        };
+
+        struct MoveForm {
+            std::vector<std::pair<CheckerIndex, std::vector<MoveAction>>> data{};
+        };
+    }
+
+    struct StateUnselected {
+        explicit StateUnselected(const GameData& game_data);
+    };
 
     namespace selected {
 
-        struct MoveActionForm {
+        struct MoveForm {
             CheckerIndex m_index;
-            std::vector<MoveAction> m_actions;
+            std::vector<std::pair<CheckerIndex, std::vector<MoveAction>>> data{};
         };
 
         namespace attack {
@@ -30,7 +42,7 @@ namespace mcts_checkers::board {
                 Form(CheckerIndex index, std::vector<AttackAction>&& actions);
                 CheckerIndex m_index;
                 std::vector<Node> m_nodes;
-                std::vector<AttackAction> m_actions;
+                std::vector<std::pair<CheckerIndex, std::vector<MoveAction>>> data{};
             };
         }
 
@@ -38,7 +50,7 @@ namespace mcts_checkers::board {
             BoardVector m_board_vector;
         };
 
-        using State = std::variant<MoveActionForm, attack::Form>;
+        using State = std::variant<MoveForm, attack::Form>;
 
         struct Form {
             Form(CheckerIndex checker_index, const GameData& game_data);

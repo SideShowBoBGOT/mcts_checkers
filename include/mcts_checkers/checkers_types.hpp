@@ -25,4 +25,8 @@ namespace mcts_checkers {
         BoardIndex m_board_index{strong::uninitialized};
         std::vector<AttackAction> m_child_actions{};
     };
+    struct CollectAttacksResult {
+        std::vector<AttackAction> actions{};
+        uint64_t depth{};
+    };
 }
