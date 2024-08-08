@@ -110,27 +110,26 @@ namespace mcts_checkers::board {
         }
     }
 
+    bool is_window_hovered() {
+        return ImGui::IsWindowHovered(ImGuiHoveredFlags_None);
+    }
+
     namespace unselected_selected_common {
-        template<typename SelectedForm, typename Form>
-        std::variant<StateNotChange, SelectedForm> iter(Form& form) {
+
+        template<typename Form>
+        void draw_action_cells(const Form& form) {
             for(const auto& el : form.m_actions) {
                 draw_hovered_cell(convert_checker_index_to_board_vector(el.first), PURPLE_BLUE_COLOR);
             }
+        }
 
-            if(not ImGui::IsWindowHovered(ImGuiHoveredFlags_None)) return StateNotChange{};
+        template<typename SelectedForm, typename Form>
+        std::variant<StateNotChange, SelectedForm> select_checker(Form& form) {
+            assert(is_window_hovered() && "Window is not hovered");
 
             const auto checker_board_vector = calc_hovered_cell();
-
             if(const auto checker_index_opt = try_convert_board_vector_to_checker_index(checker_board_vector)) {
                 const auto checker_index = *checker_index_opt;
-
-                if constexpr (std::same_as<Form, selected::MoveForm> or std::same_as<Form, selected::attack::Form>) {
-                    if(checker_index == form.m_index) {
-                        draw_hovered_cell(checker_board_vector, YELLOW_COLOR);
-                        return StateNotChange{};
-                    }
-                }
-
                 const auto it = std::find_if(std::begin(form.m_actions), std::end(form.m_actions),
                     [checker_index](const auto& el) { return el.first == checker_index; });
                 if(it != std::end(form.m_actions)) {
@@ -178,18 +177,27 @@ namespace mcts_checkers::board {
             return MoveForm{utils::checked_move(moves)};
         }
 
+        template<typename SelectedForm, typename Form>
+        std::variant<StateNotChange, SelectedForm> iter(Form& form) {
+            unselected_selected_common::draw_action_cells(form);
+            if(is_window_hovered()) {
+                return unselected_selected_common::select_checker<SelectedForm>(form);
+            }
+            return StateNotChange{};
+        }
+
     }
 
     std::variant<StateNotChange, selected::attack::Form> iter(
         unselected::AttackForm& form, const GameData&
     ) {
-        return unselected_selected_common::iter<selected::attack::Form>(form);
+        return unselected::iter<selected::attack::Form>(form);
     }
 
     std::variant<StateNotChange, selected::MoveForm> iter(
         unselected::MoveForm& form, const GameData&
     ) {
-        return unselected_selected_common::iter<selected::MoveForm>(form);
+        return unselected::iter<selected::MoveForm>(form);
     }
 
     namespace selected {
@@ -231,26 +239,10 @@ namespace mcts_checkers::board {
             const auto padded_p_max = p_max - padding;
             ImGui::GetWindowDrawList()->AddRectFilled(padded_p_min, padded_p_max, color);
         }
-
-        template<typename FormType>
-        IterationResult common_iter(FormType& form) {
-            auto iter_result = unselected_selected_common::iter<FormType>(form);
-            draw_hovered_cell(convert_checker_index_to_board_vector(form.m_index), BLUE_COLOR);
-            if(std::holds_alternative<FormType>(iter_result)) {
-                return utils::variant_move<IterationResult>(utils::checked_move(iter_result));
-            }
-            return StateNotChange{};
-        }
     }
 
     selected::IterationResult iter(selected::MoveForm& form, const GameData& game_data) {
-        {
-            auto iter_result = selected::common_iter(form);
-            if(not std::holds_alternative<StateNotChange>(iter_result)) {
-                return utils::variant_move<selected::IterationResult>(utils::checked_move(iter_result));
-            }
-        }
-
+        unselected_selected_common::draw_action_cells(form);
         for(const auto& action : form.m_index_actions) {
             selected::draw_action_rect(convert_board_index_to_board_vector(action._val), PURPLE_COLOR);
         }
@@ -266,19 +258,19 @@ namespace mcts_checkers::board {
                 if(ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
                     return SelectionConfirmed{};
                 }
-                return StateNotChange{};
+            }
+            if(
+                auto selection_result = unselected_selected_common::select_checker<selected::MoveForm>(form);
+                not std::holds_alternative<StateNotChange>(selection_result)
+            ) {
+                return utils::variant_move<selected::IterationResult>(utils::checked_move(selection_result));
             }
         }
         return StateNotChange{};
     }
 
     selected::IterationResult iter(selected::attack::Form& form, const GameData& game_data) {
-        {
-            auto iter_result = selected::common_iter(form);
-            if(not std::holds_alternative<StateNotChange>(iter_result)) {
-                return utils::variant_move<selected::IterationResult>(utils::checked_move(iter_result));
-            }
-        }
+        unselected_selected_common::draw_action_cells(form);
 
         {
             const auto& last_node = form.m_index_nodes.back();
@@ -290,7 +282,7 @@ namespace mcts_checkers::board {
             }
         }
 
-        if(ImGui::IsWindowHovered(ImGuiHoveredFlags_None)) {
+        if(is_window_hovered()) {
             if(ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
                 if(form.m_index_nodes.size() > 1) {
                     form.m_index_nodes.pop_back();
@@ -312,7 +304,13 @@ namespace mcts_checkers::board {
                     form.m_index_nodes.emplace_back(it->m_board_index, it->m_child_actions);
                     return StateNotChange{};
                 }
-                return StateNotChange{};
+            }
+
+            if(
+                auto selection_result = unselected_selected_common::select_checker<selected::attack::Form>(form);
+                not std::holds_alternative<StateNotChange>(selection_result)
+            ) {
+                return utils::variant_move<selected::IterationResult>(utils::checked_move(selection_result));
             }
         }
         return StateNotChange{};
