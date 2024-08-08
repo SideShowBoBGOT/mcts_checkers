@@ -110,6 +110,42 @@ namespace mcts_checkers::board {
         }
     }
 
+    namespace unselected_selected_common {
+        template<typename SelectedForm, typename Form>
+        std::variant<StateNotChange, SelectedForm> iter(Form& form) {
+            for(const auto& el : form.m_actions) {
+                draw_hovered_cell(convert_checker_index_to_board_vector(el.first), PURPLE_BLUE_COLOR);
+            }
+
+            if(not ImGui::IsWindowHovered(ImGuiHoveredFlags_None)) return StateNotChange{};
+
+            const auto checker_board_vector = calc_hovered_cell();
+
+            if(const auto checker_index_opt = try_convert_board_vector_to_checker_index(checker_board_vector)) {
+                const auto checker_index = *checker_index_opt;
+
+                if constexpr (std::same_as<Form, selected::MoveForm> or std::same_as<Form, selected::attack::Form>) {
+                    if(checker_index == form.m_index) {
+                        draw_hovered_cell(checker_board_vector, YELLOW_COLOR);
+                        return StateNotChange{};
+                    }
+                }
+
+                const auto it = std::find_if(std::begin(form.m_actions), std::end(form.m_actions),
+                    [checker_index](const auto& el) { return el.first == checker_index; });
+                if(it != std::end(form.m_actions)) {
+                    draw_hovered_cell(checker_board_vector, GREEN_COLOR);
+                    if(ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+                        return SelectedForm(checker_index, utils::checked_move(form.m_actions));
+                    }
+                    return StateNotChange{};
+                }
+            }
+            draw_hovered_cell(checker_board_vector, YELLOW_COLOR);
+            return StateNotChange{};
+        }
+    }
+
     namespace unselected {
 
         std::variant<AttackForm, MoveForm> determine_form(const GameData& game_data) {
@@ -142,44 +178,18 @@ namespace mcts_checkers::board {
             return MoveForm{utils::checked_move(moves)};
         }
 
-        template<typename SelectedForm, typename UnselectedForm>
-        std::variant<StateNotChange, SelectedForm> iter(UnselectedForm& form) {
-            for(const auto& el : form.m_actions) {
-                draw_hovered_cell(convert_checker_index_to_board_vector(el.first), PURPLE_BLUE_COLOR);
-            }
-
-            if(not ImGui::IsWindowHovered(ImGuiHoveredFlags_None)) return StateNotChange{};
-
-            const auto checker_board_vector = calc_hovered_cell();
-
-            if(const auto checker_index_opt = try_convert_board_vector_to_checker_index(checker_board_vector)) {
-                const auto checker_index = *checker_index_opt;
-                const auto it = std::find_if(std::begin(form.m_actions), std::end(form.m_actions),
-                    [checker_index](const auto& el) { return el.first == checker_index; });
-                if(it != std::end(form.m_actions)) {
-                    draw_hovered_cell(checker_board_vector, GREEN_COLOR);
-                    if(ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
-                        return SelectedForm(checker_index, utils::checked_move(form.m_actions));
-                    }
-                    return StateNotChange{};
-                }
-            }
-            draw_hovered_cell(checker_board_vector, YELLOW_COLOR);
-            return StateNotChange{};
-        }
-
     }
 
     std::variant<StateNotChange, selected::attack::Form> iter(
         unselected::AttackForm& form, const GameData&
     ) {
-        return unselected::iter<selected::attack::Form>(form);
+        return unselected_selected_common::iter<selected::attack::Form>(form);
     }
 
     std::variant<StateNotChange, selected::MoveForm> iter(
         unselected::MoveForm& form, const GameData&
     ) {
-        return unselected::iter<selected::MoveForm>(form);
+        return unselected_selected_common::iter<selected::MoveForm>(form);
     }
 
     namespace selected {
@@ -221,16 +231,25 @@ namespace mcts_checkers::board {
             const auto padded_p_max = p_max - padding;
             ImGui::GetWindowDrawList()->AddRectFilled(padded_p_min, padded_p_max, color);
         }
+
+        template<typename FormType>
+        IterationResult common_iter(FormType& form) {
+            auto iter_result = unselected_selected_common::iter<FormType>(form);
+            draw_hovered_cell(convert_checker_index_to_board_vector(form.m_index), BLUE_COLOR);
+            if(std::holds_alternative<FormType>(iter_result)) {
+                return utils::variant_move<IterationResult>(utils::checked_move(iter_result));
+            }
+            return StateNotChange{};
+        }
     }
 
     selected::IterationResult iter(selected::MoveForm& form, const GameData& game_data) {
         {
-            auto iter_result = unselected::iter<selected::MoveForm>(form);
-            if(std::holds_alternative<selected::MoveForm>(iter_result)) {
+            auto iter_result = selected::common_iter(form);
+            if(not std::holds_alternative<StateNotChange>(iter_result)) {
                 return utils::variant_move<selected::IterationResult>(utils::checked_move(iter_result));
             }
         }
-        draw_hovered_cell(convert_checker_index_to_board_vector(form.m_index), BLUE_COLOR);
 
         for(const auto& action : form.m_index_actions) {
             selected::draw_action_rect(convert_board_index_to_board_vector(action._val), PURPLE_COLOR);
@@ -255,12 +274,11 @@ namespace mcts_checkers::board {
 
     selected::IterationResult iter(selected::attack::Form& form, const GameData& game_data) {
         {
-            auto iter_result = unselected::iter<selected::attack::Form>(form);
-            if(std::holds_alternative<selected::attack::Form>(iter_result)) {
+            auto iter_result = selected::common_iter(form);
+            if(not std::holds_alternative<StateNotChange>(iter_result)) {
                 return utils::variant_move<selected::IterationResult>(utils::checked_move(iter_result));
             }
         }
-        draw_hovered_cell(convert_checker_index_to_board_vector(form.m_index), BLUE_COLOR);
 
         {
             const auto& last_node = form.m_index_nodes.back();
