@@ -3,6 +3,7 @@
 #include <mcts_checkers/checkers_data.hpp>
 #include <mcts_checkers/checkers_funcs.hpp>
 #include <tl/optional.hpp>
+#include <ranges>
 
 namespace mcts_checkers::board {
 
@@ -82,6 +83,10 @@ namespace mcts_checkers::board {
         const auto p_min = calc_cell_top_left(checker_board_vector);
         const auto p_max = p_min + cell_size;
         ImGui::GetWindowDrawList()->AddRect(p_min, p_max, color, 0, 0, 8);
+    }
+
+    void draw_hovered_cell(const CheckerIndex checker_index, const ImU32 color) {
+        draw_hovered_cell(convert_checker_index_to_board_vector(checker_index), color);
     }
 
     struct StateNotChange{};
@@ -239,13 +244,18 @@ namespace mcts_checkers::board {
             const auto padded_p_max = p_max - padding;
             ImGui::GetWindowDrawList()->AddRectFilled(padded_p_min, padded_p_max, color);
         }
+
+        void draw_action_rect(const BoardIndex board_vector, const ImU32 color) {
+            draw_action_rect(convert_board_index_to_board_vector(board_vector), color);
+        }
     }
 
     selected::IterationResult iter(selected::MoveForm& form, const GameData& game_data) {
         unselected_selected_common::draw_action_cells(form);
         for(const auto& action : form.m_index_actions) {
-            selected::draw_action_rect(convert_board_index_to_board_vector(action._val), PURPLE_COLOR);
+            selected::draw_action_rect(action._val, PURPLE_COLOR);
         }
+        draw_hovered_cell(form.m_index, BLUE_COLOR);
 
         if(ImGui::IsWindowHovered(ImGuiHoveredFlags_None)) {
             const auto checker_board_vector = calc_hovered_cell();
@@ -258,8 +268,7 @@ namespace mcts_checkers::board {
                 if(ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
                     return SelectionConfirmed{};
                 }
-            }
-            if(
+            } else if(
                 auto selection_result = unselected_selected_common::select_checker<selected::MoveForm>(form);
                 not std::holds_alternative<StateNotChange>(selection_result)
             ) {
@@ -271,16 +280,14 @@ namespace mcts_checkers::board {
 
     selected::IterationResult iter(selected::attack::Form& form, const GameData& game_data) {
         unselected_selected_common::draw_action_cells(form);
-
-        {
-            const auto& last_node = form.m_index_nodes.back();
-            if(last_node.m_index) {
-                selected::draw_action_rect(convert_board_index_to_board_vector(*last_node.m_index), RED_COLOR);
-            }
-            for(const auto& action : last_node.m_actions) {
-                selected::draw_action_rect(convert_board_index_to_board_vector(action.m_board_index), PINK_COLOR);
-            }
+        for(const auto& node : form.m_index_nodes | std::views::drop(1)) {
+            selected::draw_action_rect(*node.m_index, RED_COLOR);
         }
+        for(const auto& action : form.m_index_nodes.back().m_actions) {
+            selected::draw_action_rect(action.m_board_index, PINK_COLOR);
+        }
+        draw_hovered_cell(form.m_index, BLUE_COLOR);
+
 
         if(is_window_hovered()) {
             if(ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
@@ -296,7 +303,7 @@ namespace mcts_checkers::board {
                     return action.m_board_index == index;
                 });
             if(it != std::end(last_node.m_actions)) {
-                draw_hovered_cell(checker_board_vector, PURPLE_COLOR);
+                draw_hovered_cell(checker_board_vector, PINK_COLOR);
                 if(ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
                     if(it->m_child_actions.empty()) {
                         return SelectionConfirmed{};
@@ -304,9 +311,7 @@ namespace mcts_checkers::board {
                     form.m_index_nodes.emplace_back(it->m_board_index, it->m_child_actions);
                     return StateNotChange{};
                 }
-            }
-
-            if(
+            } else if(
                 auto selection_result = unselected_selected_common::select_checker<selected::attack::Form>(form);
                 not std::holds_alternative<StateNotChange>(selection_result)
             ) {
