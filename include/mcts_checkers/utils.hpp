@@ -1,6 +1,7 @@
 #pragma once
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include <imgui_internal.h>
+#include <variant>
 
 namespace mcts_checkers {
 
@@ -20,5 +21,11 @@ namespace mcts_checkers {
         template<class... Ts>
         overloaded(Ts...) -> overloaded<Ts...>;
 
+        template<typename ToVariant, typename... Ts>
+        ToVariant variant_move(std::variant<Ts...>&& from_variant) {
+            return std::visit([](auto&& el) -> ToVariant {
+                return utils::checked_move(el);
+            }, utils::checked_move(from_variant));
+        }
     }
 }
