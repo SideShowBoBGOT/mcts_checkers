@@ -11,53 +11,56 @@ namespace mcts_checkers {
 
 namespace mcts_checkers::board {
 
-    struct StateUnselected {};
+    namespace unselected {
+        struct AttackForm {
+            std::vector<std::pair<CheckerIndex, CollectAttacksResult>> m_actions{};
+        };
+
+        struct MoveForm {
+            std::vector<std::pair<CheckerIndex, std::vector<MoveAction>>> m_actions{};
+        };
+    }
 
     namespace selected {
 
-        struct MoveActionForm {
+        struct MoveForm {
+            MoveForm(CheckerIndex checker_index, std::vector<std::pair<CheckerIndex, std::vector<MoveAction>>>&& actions);
             CheckerIndex m_index;
-            std::vector<MoveAction> m_actions;
+            std::span<const MoveAction> m_index_actions;
+            std::vector<std::pair<CheckerIndex, std::vector<MoveAction>>> m_actions{};
         };
 
         namespace attack {
             struct Node {
                 std::optional<BoardIndex> m_index;
-                std::span<AttackAction> m_actions;
+                std::span<const AttackAction> m_actions;
             };
 
             struct Form {
-                Form(CheckerIndex index, std::vector<AttackAction>&& actions);
+                Form(CheckerIndex index, std::vector<std::pair<CheckerIndex, CollectAttacksResult>>&& actions);
                 CheckerIndex m_index;
-                std::vector<Node> m_nodes;
-                std::vector<AttackAction> m_actions;
+                std::vector<Node> m_index_nodes;
+                std::vector<std::pair<CheckerIndex, CollectAttacksResult>> m_actions{};
             };
         }
-
-        struct SelectionConfirmed {
-            BoardVector m_board_vector;
-        };
-
-        using State = std::variant<MoveActionForm, attack::Form>;
-
-        struct Form {
-            Form(CheckerIndex checker_index, const GameData& game_data);
-            CheckerIndex m_index;
-            State m_state;
-        };
     }
 
-    struct StateSelectionConfirmed { BoardVector m_board_vector; };
+    struct InitialState {};
+    struct SelectionConfirmed {};
 
-    using State = std::variant<StateUnselected, selected::Form, StateSelectionConfirmed>;
+    using State = std::variant<
+        InitialState,
+        unselected::AttackForm, unselected::MoveForm,
+        selected::MoveForm, selected::attack::Form
+    >;
 
     class Form {
         public:
             Form();
-            void iter_sss(const GameData& checkers_data);
+            void iter_sss(const GameData& game_data);
             void change_state(State&& state);
 
-        State m_state = StateUnselected{};
+        State m_state = InitialState{};
     };
 
 }
