@@ -33,7 +33,7 @@ namespace mcts_checkers::board {
         namespace attack {
             struct Node {
                 std::optional<BoardIndex> m_index;
-                std::span<const AttackAction> m_actions;
+                std::span<const AttackTree> m_actions;
             };
 
             struct Form {
@@ -46,7 +46,6 @@ namespace mcts_checkers::board {
     }
 
     struct InitialState {};
-    struct SelectionConfirmed {};
 
     using State = std::variant<
         InitialState,

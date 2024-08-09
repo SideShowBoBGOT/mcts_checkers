@@ -25,12 +25,12 @@ namespace mcts_checkers {
 
     static const auto DEFAULT_IS_IN_PLACE = std::bitset<CHEKCERS_CELLS_COUNT>{
         get_reversed_string(
-            "11110"
+            "11111"
             "11111"
             "10001"
             "11111"
             "01000"
-            "01100"
+            "01111"
             "11111"
             "11111"
             "11111"

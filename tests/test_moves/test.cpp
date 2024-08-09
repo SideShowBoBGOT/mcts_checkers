@@ -23,11 +23,11 @@ namespace nlohmann {
     };
 
     template<>
-    struct adl_serializer<mcts_checkers::AttackAction> {
-        static void from_json(const json& j, mcts_checkers::AttackAction& data) {
+    struct adl_serializer<mcts_checkers::AttackTree> {
+        static void from_json(const json& j, mcts_checkers::AttackTree& data) {
             data.m_board_index = mcts_checkers::BoardIndex{j["index"].get<uint8_t>()};
             for(const auto& ch : j["children"]) {
-                from_json(ch, data.m_child_actions.emplace_back());
+                from_json(ch, data.m_child_trees.emplace_back());
             }
         }
     };
