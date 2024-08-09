@@ -200,8 +200,14 @@ namespace mcts_checkers::board {
     }
 
     namespace selection_confirmed {
-        using Move = strong::type<MoveAction, struct Move_>;
-        using Attack = strong::type<std::vector<AttackAction>, struct Attack_>;
+        struct Move {
+            MoveAction action;
+            CheckerIndex checker_index;
+        };
+        struct Attack {
+            std::vector<AttackAction> actions;
+            CheckerIndex checker_index;
+        };
     }
 
     namespace selected {
@@ -270,7 +276,10 @@ namespace mcts_checkers::board {
             if(it != std::end(form.m_index_actions)) {
                 draw_hovered_cell(checker_board_vector, PURPLE_COLOR);
                 if(ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
-                    return selection_confirmed::Move{MoveAction{checker_board_index}};
+                    return selection_confirmed::Move{
+                        MoveAction{checker_board_index},
+                        convert_board_vector_to_checker_index(checker_board_vector)
+                    };
                 }
             } else if(
                 auto selection_result = unselected_selected_common::select_checker<selected::MoveForm>(form);
@@ -318,7 +327,8 @@ namespace mcts_checkers::board {
                                     [](const selected::attack::Node& node) {
                                         return AttackAction{*node.m_index};
                                     })
-                                | ranges::to_vector
+                                | ranges::to_vector,
+                            convert_board_vector_to_checker_index(checker_board_vector)
                         };
 
                     }
