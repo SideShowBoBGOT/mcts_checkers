@@ -19,17 +19,18 @@ namespace mcts_checkers {
     using CheckersBitset = strong::type<std::bitset<CHEKCERS_CELLS_COUNT>, struct CheckersBitset_, strong::indexed<CheckerIndex>>;
     using BoardIndex = strong::type<uint8_t, struct BoardIndex_, strong::equality, strong::hashable>;
     using MoveAction = strong::type<BoardIndex, struct MoveAction_>;
+    using AttackAction = strong::type<BoardIndex, struct MoveAction_>;
 
     struct BoardVector {
         uint8_t x{};
         uint8_t y{};
     };
-    struct AttackAction {
+    struct AttackTree {
         BoardIndex m_board_index{strong::uninitialized};
-        std::vector<AttackAction> m_child_actions{};
+        std::vector<AttackTree> m_child_trees{};
     };
     struct CollectAttacksResult {
-        std::vector<AttackAction> actions{};
+        std::vector<AttackTree> actions{};
         uint64_t depth{};
     };
 }

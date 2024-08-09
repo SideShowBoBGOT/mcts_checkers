@@ -1,13 +1,37 @@
 #include <mcts_checkers/board_form.hpp>
 #include <mcts_checkers/utils.hpp>
 #include <mcts_checkers/checkers_data.hpp>
-#include <mcts_checkers/checkers_funcs.hpp>
+#include <mcts_checkers/action_collection_funcs.hpp>
+#include <mcts_checkers/index_converters.hpp>
 #include <tl/optional.hpp>
 #include <ranges>
+#include <range/v3/view/drop.hpp>
+#include <range/v3/view/transform.hpp>
+#include <range/v3/range/conversion.hpp>
+#include <utility>
+#include <mcts_checkers/action_application_funcs.hpp>
 
-namespace mcts_checkers::board {
+namespace mcts_checkers::board::human_ai_common {
+    namespace selection_confirmed {
+        struct Move {
+            MoveAction data;
+            CheckerIndex checker_index;
+        };
+        struct Attack {
+            std::vector<AttackAction> data;
+        };
+    }
 
-    Form::Form()=default;
+    struct PlayerMadeNoSelection {};
+
+    using IterationResult = std::variant<
+        PlayerMadeNoSelection,
+        selection_confirmed::Move,
+        selection_confirmed::Attack
+    >;
+}
+
+namespace mcts_checkers::board::human {
 
     static consteval ImVec4 normalize_rgba_color(const ImVec4 vec) {
         return {vec.x / 255, vec.y / 255, vec.z / 255, vec.w / 255};
@@ -90,15 +114,6 @@ namespace mcts_checkers::board {
     }
 
     struct StateNotChange{};
-
-    using IterationResult = std::variant<
-        StateNotChange,
-        unselected::MoveForm,
-        unselected::AttackForm,
-        selected::MoveForm,
-        selected::attack::Form,
-        SelectionConfirmed
-    >;
 
     bool is_current_player_checker(const GameData& game_data, const CheckerIndex checker_index) {
         return game_data.checkers.m_is_in_place[checker_index]
@@ -228,11 +243,17 @@ namespace mcts_checkers::board {
         attack::Form::Form(const CheckerIndex checker_index, std::vector<std::pair<CheckerIndex, CollectAttacksResult>>&& actions)
             : m_index{checker_index}, m_actions{utils::checked_move(actions)} {
             const auto it = find_checker_actions(checker_index, m_actions);
-            m_index_nodes.emplace_back(std::nullopt, it->second.actions);
+            m_index_nodes.emplace_back(tl::nullopt, it->second.actions);
         }
 
         using OtherCheckerSelected = strong::type<CheckerIndex, struct OtherCheckerSelected_>;
-        using IterationResult = std::variant<StateNotChange, SelectionConfirmed, MoveForm, attack::Form>;
+        using IterationResult = std::variant<
+            StateNotChange,
+            MoveForm,
+            attack::Form,
+            human_ai_common::selection_confirmed::Move,
+            human_ai_common::selection_confirmed::Attack
+        >;
 
         void draw_action_rect(const BoardVector board_vector, const ImU32 color) {
             const auto cell_size = calc_cell_size();
@@ -250,7 +271,7 @@ namespace mcts_checkers::board {
         }
     }
 
-    selected::IterationResult iter(selected::MoveForm& form, const GameData& game_data) {
+    selected::IterationResult iter(selected::MoveForm& form, const GameData&) {
         unselected_selected_common::draw_action_cells(form);
         for(const auto& action : form.m_index_actions) {
             selected::draw_action_rect(action._val, PURPLE_COLOR);
@@ -259,14 +280,16 @@ namespace mcts_checkers::board {
 
         if(ImGui::IsWindowHovered(ImGuiHoveredFlags_None)) {
             const auto checker_board_vector = calc_hovered_cell();
+            const auto checker_board_index = convert_board_vector_to_board_index(checker_board_vector);
             const auto it = std::find_if(std::begin(form.m_index_actions), std::end(form.m_index_actions),
-            [index=convert_board_vector_to_board_index(checker_board_vector)](const MoveAction action) {
-                return action._val == index;
-            });
+            [checker_board_index](const MoveAction action) { return action._val == checker_board_index; });
             if(it != std::end(form.m_index_actions)) {
                 draw_hovered_cell(checker_board_vector, PURPLE_COLOR);
                 if(ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
-                    return SelectionConfirmed{};
+                    return human_ai_common::selection_confirmed::Move{
+                        MoveAction{checker_board_index},
+                        form.m_index
+                    };
                 }
             } else if(
                 auto selection_result = unselected_selected_common::select_checker<selected::MoveForm>(form);
@@ -278,7 +301,7 @@ namespace mcts_checkers::board {
         return StateNotChange{};
     }
 
-    selected::IterationResult iter(selected::attack::Form& form, const GameData& game_data) {
+    selected::IterationResult iter(selected::attack::Form& form, const GameData&) {
         unselected_selected_common::draw_action_cells(form);
         for(const auto& node : form.m_index_nodes | std::views::drop(1)) {
             selected::draw_action_rect(*node.m_index, RED_COLOR);
@@ -299,16 +322,24 @@ namespace mcts_checkers::board {
             const auto checker_board_vector = calc_hovered_cell();
             const auto& last_node = form.m_index_nodes.back();
             const auto it = std::find_if(std::begin(last_node.m_actions), std::end(last_node.m_actions),
-                [index=convert_board_vector_to_board_index(checker_board_vector)](const AttackAction& action) {
+                [index=convert_board_vector_to_board_index(checker_board_vector)](const AttackTree& action) {
                     return action.m_board_index == index;
                 });
             if(it != std::end(last_node.m_actions)) {
                 draw_hovered_cell(checker_board_vector, PINK_COLOR);
                 if(ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
-                    if(it->m_child_actions.empty()) {
-                        return SelectionConfirmed{};
+                    form.m_index_nodes.emplace_back(it->m_board_index, it->m_child_trees);
+                    if(it->m_child_trees.empty()) {
+                        auto actions = form.m_index_nodes
+                            | ranges::views::transform(
+                                [index=convert_checker_index_to_board_index(form.m_index)]
+                                (const selected::attack::Node& node) {
+                                    return AttackAction{node.m_index.value_or(index)};
+                                })
+                            | ranges::to_vector;
+                        assert(not actions.empty() && "Actions can not be empty");
+                        return human_ai_common::selection_confirmed::Attack{utils::checked_move(actions)};
                     }
-                    form.m_index_nodes.emplace_back(it->m_board_index, it->m_child_actions);
                     return StateNotChange{};
                 }
             } else if(
@@ -361,33 +392,79 @@ namespace mcts_checkers::board {
         return unselected::determine_form(game_data);
     }
 
-    void Form::iter_sss(const GameData& game_data) {
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
-        ImGui::BeginChild("BoardForm", ImVec2(0, -1), true, ImGuiWindowFlags_NoScrollWithMouse);
-        draw_rects();
-        draw_checkers(game_data);
+    human_ai_common::IterationResult iter(Form& form, const GameData& game_data) {
+        using TransitionResult = std::variant<
+            StateNotChange,
+            unselected::MoveForm,
+            unselected::AttackForm,
+            selected::MoveForm,
+            selected::attack::Form,
+            human_ai_common::selection_confirmed::Move,
+            human_ai_common::selection_confirmed::Attack
+        >;
 
         auto new_state = std::visit(
-            [this, &game_data](auto& state) -> IterationResult {
-            return utils::variant_move<IterationResult>(iter(state, game_data));
-        }, m_state);
+            [&game_data](auto& state) -> TransitionResult {
+            return utils::variant_move<TransitionResult>(human::iter(state, game_data));
+        }, form.value_of());
 
-        std::visit(utils::overloaded{
-            [](const StateNotChange) {},
-            [this, &game_data](const SelectionConfirmed) {
-                m_state = utils::variant_move<State>(unselected::determine_form(game_data));
+        return std::visit(utils::overloaded{
+            [](const StateNotChange) -> human_ai_common::IterationResult {
+                return human_ai_common::PlayerMadeNoSelection{};
             },
-            [this](auto&& state) {
-                m_state = utils::checked_move(state);
+            [&form](const human_ai_common::selection_confirmed::Move action) -> human_ai_common::IterationResult {
+                form.value_of() = InitialState{};
+                return action;
+            },
+            [&form](human_ai_common::selection_confirmed::Attack&& action) -> human_ai_common::IterationResult  {
+                form.value_of() = InitialState{};
+                return utils::checked_move(action);
+            },
+            [&form](auto&& state) -> human_ai_common::IterationResult {
+                form.value_of() = utils::checked_move(state);
+                return human_ai_common::PlayerMadeNoSelection{};
             }
         }, utils::checked_move(new_state));
 
-        ImGui::EndChild();
-        ImGui::PopStyleVar();
+    }
+}
+
+namespace mcts_checkers::board {
+
+    human_ai_common::IterationResult iter(human::Form& form, const GameData& game_data) {
+        return human::iter(form, game_data);
     }
 
-    void Form::change_state(State&& state) {
-        m_state = utils::checked_move(state);
+    human_ai_common::IterationResult iter(ai::Form& form, const GameData& game_data) {
+        return human_ai_common::IterationResult{};
+    }
+
+    void iter(Form& form) {
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+        ImGui::BeginChild("BoardForm", ImVec2(0, -1), true, ImGuiWindowFlags_NoScrollWithMouse);
+        human::draw_rects();
+        human::draw_checkers(form.m_game_data);
+
+        const auto action = std::visit(
+            [&game_data = std::as_const(form.m_game_data)]
+            (auto& state) -> human_ai_common::IterationResult {
+                return board::iter(state, game_data);
+            }, form.m_state
+        );
+
+        std::visit(utils::overloaded{
+            [](const human_ai_common::PlayerMadeNoSelection) {},
+            [&game_data = form.m_game_data](const human_ai_common::selection_confirmed::Move& action) {
+                apply_move(game_data, action.checker_index, action.data);
+            },
+            [&game_data = form.m_game_data](const human_ai_common::selection_confirmed::Attack& action) {
+                apply_attack(game_data, action.data);
+            }
+        }, action);
+
+
+        ImGui::EndChild();
+        ImGui::PopStyleVar();
     }
 
 }

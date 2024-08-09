@@ -27,5 +27,6 @@ namespace mcts_checkers {
                 return utils::checked_move(el);
             }, utils::checked_move(from_variant));
         }
+
     }
 }

@@ -7,7 +7,7 @@
 #include <string_view>
 #include <range/v3/algorithm/find_if.hpp>
 
-void validate_unique_nodes_per_single_level(const std::vector<mcts_checkers::AttackAction>& actions) {
+void validate_unique_nodes_per_single_level(const std::vector<mcts_checkers::AttackTree>& actions) {
     for(size_t i = 0; i < actions.size(); ++i) {
         for(size_t j = i + 1; j < actions.size(); ++j) {
             EXPECT_NE(actions[i].m_board_index, actions[j].m_board_index);
@@ -16,19 +16,19 @@ void validate_unique_nodes_per_single_level(const std::vector<mcts_checkers::Att
 }
 
 void validate_actions_equal(
-    const std::vector<mcts_checkers::AttackAction>& first,
-    const std::vector<mcts_checkers::AttackAction>& second
+    const std::vector<mcts_checkers::AttackTree>& first,
+    const std::vector<mcts_checkers::AttackTree>& second
 ) {
     EXPECT_EQ(first.size(), second.size());
     validate_unique_nodes_per_single_level(first);
     validate_unique_nodes_per_single_level(second);
     for(const auto& first_action : first) {
-        const auto second_it = ranges::find_if(second, [&first_action](const mcts_checkers::AttackAction& second_action) {
+        const auto second_it = ranges::find_if(second, [&first_action](const mcts_checkers::AttackTree& second_action) {
             return first_action.m_board_index == second_action.m_board_index;
         });
         const auto ne = second_it != std::end(second);
         if(ne) {
-            validate_actions_equal(first_action.m_child_actions, second_it->m_child_actions);
+            validate_actions_equal(first_action.m_child_trees, second_it->m_child_trees);
         } else {
             EXPECT_TRUE(false);
         }
@@ -38,17 +38,17 @@ void validate_actions_equal(
 struct TestData {
     mcts_checkers::BoardVector checker_vector;
     mcts_checkers::CheckersData board;
-    std::vector<mcts_checkers::AttackAction> result;
+    std::vector<mcts_checkers::AttackTree> result;
 };
 
 namespace nlohmann {
 
     template<>
-    struct adl_serializer<mcts_checkers::AttackAction> {
-        static void from_json(const json& j, ::mcts_checkers::AttackAction& data) {
+    struct adl_serializer<mcts_checkers::AttackTree> {
+        static void from_json(const json& j, ::mcts_checkers::AttackTree& data) {
             data.m_board_index = mcts_checkers::BoardIndex{j["index"].get<uint8_t>()};
             for(const auto& ch : j["children"]) {
-                from_json(ch, data.m_child_actions.emplace_back());
+                from_json(ch, data.m_child_trees.emplace_back());
             }
         }
     };
@@ -58,7 +58,7 @@ namespace nlohmann {
         static void from_json(const json& j, TestData& data) {
             data.checker_vector = j["checker_vector"].get<mcts_checkers::BoardVector>();
             data.board = j["board"].get<mcts_checkers::CheckersData>();
-            data.result = j["result"].get<std::vector<mcts_checkers::AttackAction>>();
+            data.result = j["result"].get<std::vector<mcts_checkers::AttackTree>>();
         }
     };
 }

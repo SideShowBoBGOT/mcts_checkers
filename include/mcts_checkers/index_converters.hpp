@@ -2,9 +2,6 @@
 #include <mcts_checkers/checkers_types.hpp>
 
 namespace mcts_checkers {
-
-    struct CheckersData;
-
     template<std::integral T>
     constexpr bool is_even(const T value) {
         return value % 2 == 0;
@@ -44,10 +41,4 @@ namespace mcts_checkers {
         const auto board_index = convert_checker_index_to_board_index(checker_index);
         return convert_board_index_to_board_vector(board_index);
     }
-
-    std::vector<MoveAction> collect_moves(const CheckersData& data, CheckerIndex checker_index);
-    std::vector<MoveAction> collect_moves(const CheckersData& data, BoardVector checker_board_vector);
-
-    CollectAttacksResult collect_attacks(const CheckersData& data, BoardVector checker_board_vector);
-    CollectAttacksResult collect_attacks(const CheckersData& data, CheckerIndex checker_index);
 }

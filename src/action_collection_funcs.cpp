@@ -1,5 +1,6 @@
-#include <mcts_checkers/checkers_funcs.hpp>
+#include <mcts_checkers/action_collection_funcs.hpp>
 #include <mcts_checkers/checkers_data.hpp>
+#include <mcts_checkers/index_converters.hpp>
 
 #include <array>
 #include <algorithm>
@@ -66,7 +67,7 @@ static constexpr auto DEVIATIONS = std::array{
     ) {
         assert(data.m_is_in_place[checker_index]);
 
-        auto actions = std::vector<AttackAction>{};
+        auto actions = std::vector<AttackTree>{};
         auto action_sizes = std::vector<uint64_t>{};
         const auto is_king = data.m_is_king[checker_index];
         const auto checker_player = data.m_player_index[checker_index];
@@ -103,7 +104,7 @@ static constexpr auto DEVIATIONS = std::array{
 
                             auto [action, action_size] = collect_attacks(new_data, block_checker_index);
                             action_sizes.emplace_back(action_size + 1);
-                            attack_action.m_child_actions = std::move(action);
+                            attack_action.m_child_trees = std::move(action);
 
                             if(not is_king) break;
 
