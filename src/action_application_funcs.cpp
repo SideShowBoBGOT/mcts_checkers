@@ -50,7 +50,7 @@ namespace mcts_checkers {
     }
 
     constexpr int8_t sign(const int8_t val) {
-        return val == 0i8 ? 0i8 : (val > 0i8 ? 1i8 : -1i8);
+        return val == 0 ? static_cast<int8_t>(0) : static_cast<int8_t>(val > 0 ? 1 : -1);
     }
 
     VectorInt8 sign(const VectorInt8 v) {
@@ -71,8 +71,8 @@ namespace mcts_checkers {
         const auto start_vector = VectorInt8(convert_board_index_to_board_vector(start));
         const auto end_vector = VectorInt8(convert_board_index_to_board_vector(end));
         const auto dev = sign(end_vector - start_vector);
-        for(auto start = start_vector; start != end_vector; start += dev) {
-            const auto index = convert_board_vector_to_checker_index(convert_vectorint8_to_board_vector(start));
+        for(auto i = start_vector; i != end_vector; i += dev) {
+            const auto index = convert_board_vector_to_checker_index(convert_vectorint8_to_board_vector(i));
             game_data.checkers.m_is_in_place[index] = false;
         }
         const auto end_checker_index = convert_board_vector_to_checker_index(

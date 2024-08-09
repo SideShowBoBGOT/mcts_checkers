@@ -2,6 +2,7 @@
 #include <mcts_checkers/utils.hpp>
 #include <mcts_checkers/checkers_data.hpp>
 #include <mcts_checkers/checkers_funcs.hpp>
+#include <mcts_checkers/index_converters.hpp>
 #include <tl/optional.hpp>
 #include <ranges>
 #include <range/v3/view/drop.hpp>
@@ -261,7 +262,7 @@ namespace mcts_checkers::board {
         }
     }
 
-    selected::IterationResult iter(selected::MoveForm& form, const GameData& game_data) {
+    selected::IterationResult iter(selected::MoveForm& form, const GameData&) {
         unselected_selected_common::draw_action_cells(form);
         for(const auto& action : form.m_index_actions) {
             selected::draw_action_rect(action._val, PURPLE_COLOR);
@@ -291,7 +292,7 @@ namespace mcts_checkers::board {
         return StateNotChange{};
     }
 
-    selected::IterationResult iter(selected::attack::Form& form, const GameData& game_data) {
+    selected::IterationResult iter(selected::attack::Form& form, const GameData&) {
         unselected_selected_common::draw_action_cells(form);
         for(const auto& node : form.m_index_nodes | std::views::drop(1)) {
             selected::draw_action_rect(*node.m_index, RED_COLOR);
