@@ -1,15 +1,37 @@
 #include <mcts_checkers/board_form.hpp>
 #include <mcts_checkers/utils.hpp>
 #include <mcts_checkers/checkers_data.hpp>
-#include <mcts_checkers/checkers_funcs.hpp>
+#include <mcts_checkers/action_collection_funcs.hpp>
 #include <mcts_checkers/index_converters.hpp>
 #include <tl/optional.hpp>
 #include <ranges>
 #include <range/v3/view/drop.hpp>
 #include <range/v3/view/transform.hpp>
 #include <range/v3/range/conversion.hpp>
+#include <utility>
+#include <mcts_checkers/action_application_funcs.hpp>
 
-namespace mcts_checkers::board::player {
+namespace mcts_checkers::board::human_ai_common {
+    namespace selection_confirmed {
+        struct Move {
+            MoveAction data;
+            CheckerIndex checker_index;
+        };
+        struct Attack {
+            std::vector<AttackAction> data;
+        };
+    }
+
+    struct PlayerMadeNoSelection {};
+
+    using IterationResult = std::variant<
+        PlayerMadeNoSelection,
+        selection_confirmed::Move,
+        selection_confirmed::Attack
+    >;
+}
+
+namespace mcts_checkers::board::human {
 
     static consteval ImVec4 normalize_rgba_color(const ImVec4 vec) {
         return {vec.x / 255, vec.y / 255, vec.z / 255, vec.w / 255};
@@ -198,17 +220,6 @@ namespace mcts_checkers::board::player {
         return unselected::iter<selected::MoveForm>(form);
     }
 
-    namespace selection_confirmed {
-        struct Move {
-            MoveAction action;
-            CheckerIndex checker_index;
-        };
-        struct Attack {
-            std::vector<AttackAction> actions;
-            CheckerIndex checker_index;
-        };
-    }
-
     namespace selected {
 
         template<typename ActionsType>
@@ -232,7 +243,7 @@ namespace mcts_checkers::board::player {
         attack::Form::Form(const CheckerIndex checker_index, std::vector<std::pair<CheckerIndex, CollectAttacksResult>>&& actions)
             : m_index{checker_index}, m_actions{utils::checked_move(actions)} {
             const auto it = find_checker_actions(checker_index, m_actions);
-            m_index_nodes.emplace_back(std::nullopt, it->second.actions);
+            m_index_nodes.emplace_back(tl::nullopt, it->second.actions);
         }
 
         using OtherCheckerSelected = strong::type<CheckerIndex, struct OtherCheckerSelected_>;
@@ -240,8 +251,8 @@ namespace mcts_checkers::board::player {
             StateNotChange,
             MoveForm,
             attack::Form,
-            selection_confirmed::Move,
-            selection_confirmed::Attack
+            human_ai_common::selection_confirmed::Move,
+            human_ai_common::selection_confirmed::Attack
         >;
 
         void draw_action_rect(const BoardVector board_vector, const ImU32 color) {
@@ -275,9 +286,9 @@ namespace mcts_checkers::board::player {
             if(it != std::end(form.m_index_actions)) {
                 draw_hovered_cell(checker_board_vector, PURPLE_COLOR);
                 if(ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
-                    return selection_confirmed::Move{
+                    return human_ai_common::selection_confirmed::Move{
                         MoveAction{checker_board_index},
-                        convert_board_vector_to_checker_index(checker_board_vector)
+                        form.m_index
                     };
                 }
             } else if(
@@ -317,21 +328,18 @@ namespace mcts_checkers::board::player {
             if(it != std::end(last_node.m_actions)) {
                 draw_hovered_cell(checker_board_vector, PINK_COLOR);
                 if(ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
-                    if(it->m_child_trees.empty()) {
-
-                        return selection_confirmed::Attack{
-                            form.m_index_nodes
-                                | ranges::views::drop(1)
-                                | ranges::views::transform(
-                                    [](const selected::attack::Node& node) {
-                                        return AttackAction{*node.m_index};
-                                    })
-                                | ranges::to_vector,
-                            convert_board_vector_to_checker_index(checker_board_vector)
-                        };
-
-                    }
                     form.m_index_nodes.emplace_back(it->m_board_index, it->m_child_trees);
+                    if(it->m_child_trees.empty()) {
+                        auto actions = form.m_index_nodes
+                            | ranges::views::transform(
+                                [index=convert_checker_index_to_board_index(form.m_index)]
+                                (const selected::attack::Node& node) {
+                                    return AttackAction{node.m_index.value_or(index)};
+                                })
+                            | ranges::to_vector;
+                        assert(not actions.empty() && "Actions can not be empty");
+                        return human_ai_common::selection_confirmed::Attack{utils::checked_move(actions)};
+                    }
                     return StateNotChange{};
                 }
             } else if(
@@ -384,45 +392,79 @@ namespace mcts_checkers::board::player {
         return unselected::determine_form(game_data);
     }
 
-    void iter(Form& form, const GameData& game_data) {
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
-        ImGui::BeginChild("BoardForm", ImVec2(0, -1), true, ImGuiWindowFlags_NoScrollWithMouse);
-        draw_rects();
-        draw_checkers(game_data);
-
-        using IterationResult = std::variant<
+    human_ai_common::IterationResult iter(Form& form, const GameData& game_data) {
+        using TransitionResult = std::variant<
             StateNotChange,
             unselected::MoveForm,
             unselected::AttackForm,
             selected::MoveForm,
             selected::attack::Form,
-            selection_confirmed::Move,
-            selection_confirmed::Attack
+            human_ai_common::selection_confirmed::Move,
+            human_ai_common::selection_confirmed::Attack
         >;
 
         auto new_state = std::visit(
-            [&game_data](auto& state) -> IterationResult {
-            return utils::variant_move<IterationResult>(iter(state, game_data));
-        }, form);
+            [&game_data](auto& state) -> TransitionResult {
+            return utils::variant_move<TransitionResult>(human::iter(state, game_data));
+        }, form.value_of());
 
-        std::visit(utils::overloaded{
-            [](const StateNotChange) {},
-            [&form, &game_data](selection_confirmed::Move) {
-                form = utils::variant_move<Form>(
-                    unselected::determine_form(game_data)
-                );
+        return std::visit(utils::overloaded{
+            [](const StateNotChange) -> human_ai_common::IterationResult {
+                return human_ai_common::PlayerMadeNoSelection{};
             },
-            [&form, &game_data](selection_confirmed::Attack&&) {
-                form = utils::variant_move<Form>(
-                    unselected::determine_form(game_data)
-                );
+            [&form](const human_ai_common::selection_confirmed::Move action) -> human_ai_common::IterationResult {
+                form.value_of() = InitialState{};
+                return action;
             },
-            [&form](auto&& state) {
-                form = utils::checked_move(state);
+            [&form](human_ai_common::selection_confirmed::Attack&& action) -> human_ai_common::IterationResult  {
+                form.value_of() = InitialState{};
+                return utils::checked_move(action);
+            },
+            [&form](auto&& state) -> human_ai_common::IterationResult {
+                form.value_of() = utils::checked_move(state);
+                return human_ai_common::PlayerMadeNoSelection{};
             }
         }, utils::checked_move(new_state));
+
+    }
+}
+
+namespace mcts_checkers::board {
+
+    human_ai_common::IterationResult iter(human::Form& form, const GameData& game_data) {
+        return human::iter(form, game_data);
+    }
+
+    human_ai_common::IterationResult iter(ai::Form& form, const GameData& game_data) {
+        return human_ai_common::IterationResult{};
+    }
+
+    void iter(Form& form) {
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+        ImGui::BeginChild("BoardForm", ImVec2(0, -1), true, ImGuiWindowFlags_NoScrollWithMouse);
+        human::draw_rects();
+        human::draw_checkers(form.m_game_data);
+
+        const auto action = std::visit(
+            [&game_data = std::as_const(form.m_game_data)]
+            (auto& state) -> human_ai_common::IterationResult {
+                return board::iter(state, game_data);
+            }, form.m_state
+        );
+
+        std::visit(utils::overloaded{
+            [](const human_ai_common::PlayerMadeNoSelection) {},
+            [&game_data = form.m_game_data](const human_ai_common::selection_confirmed::Move& action) {
+                apply_move(game_data, action.checker_index, action.data);
+            },
+            [&game_data = form.m_game_data](const human_ai_common::selection_confirmed::Attack& action) {
+                apply_attack(game_data, action.data);
+            }
+        }, action);
+
 
         ImGui::EndChild();
         ImGui::PopStyleVar();
     }
+
 }

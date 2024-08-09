@@ -21,8 +21,8 @@ add_library(mcts_checkers
         include/mcts_checkers/mcts.hpp
         src/mcts.cpp
         include/mcts_checkers/checkers_types.hpp
-        include/mcts_checkers/checkers_funcs.hpp
-        src/checkers_funcs.cpp
+        include/mcts_checkers/action_collection_funcs.hpp
+        src/action_collection_funcs.cpp
         include/mcts_checkers/action_application_funcs.hpp
         src/action_application_funcs.cpp
         include/mcts_checkers/index_converters.hpp

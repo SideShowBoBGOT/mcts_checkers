@@ -1,4 +1,4 @@
-#include <mcts_checkers/checkers_funcs.hpp>
+#include <mcts_checkers/action_collection_funcs.hpp>
 #include <mcts_checkers/checkers_data.hpp>
 #include <mcts_checkers/index_converters.hpp>
 

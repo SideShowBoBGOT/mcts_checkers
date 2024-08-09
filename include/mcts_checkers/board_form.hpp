@@ -1,15 +1,16 @@
 #pragma once
 #include <mcts_checkers/checkers_types.hpp>
+#include <mcts_checkers/checkers_data.hpp>
 #include <variant>
 #include <vector>
-#include <optional>
 #include <span>
+#include <tl/optional.hpp>
 
 namespace mcts_checkers {
     struct GameData;
 }
 
-namespace mcts_checkers::board::player {
+namespace mcts_checkers::board::human {
 
     namespace unselected {
         struct AttackForm {
@@ -32,7 +33,7 @@ namespace mcts_checkers::board::player {
 
         namespace attack {
             struct Node {
-                std::optional<BoardIndex> m_index;
+                tl::optional<BoardIndex> m_index;
                 std::span<const AttackTree> m_actions;
             };
 
@@ -47,13 +48,35 @@ namespace mcts_checkers::board::player {
 
     struct InitialState {};
 
-    using Form = std::variant<
-        InitialState,
-        unselected::AttackForm,
-        unselected::MoveForm,
-        selected::MoveForm,
-        selected::attack::Form
+    using Form = strong::type<
+        std::variant<
+            InitialState,
+            unselected::AttackForm,
+            unselected::MoveForm,
+            selected::MoveForm,
+            selected::attack::Form
+        >,
+        class Form_,
+        strong::default_constructible
+    >;
+}
+
+namespace mcts_checkers::board::ai {
+
+    struct Form {};
+
+}
+
+namespace mcts_checkers::board {
+    using State = std::variant<
+        human::Form,
+        ai::Form
     >;
 
-    void iter(Form& form, const GameData& game_data);
+    struct Form {
+        State m_state{};
+        GameData m_game_data{};
+    };
+
+    void iter(Form& form);
 }
