@@ -9,9 +9,7 @@
 #include <range/v3/view/transform.hpp>
 #include <range/v3/range/conversion.hpp>
 
-namespace mcts_checkers::board {
-
-    Form::Form()=default;
+namespace mcts_checkers::board::player {
 
     static consteval ImVec4 normalize_rgba_color(const ImVec4 vec) {
         return {vec.x / 255, vec.y / 255, vec.z / 255, vec.w / 255};
@@ -386,7 +384,7 @@ namespace mcts_checkers::board {
         return unselected::determine_form(game_data);
     }
 
-    void Form::iter_sss(const GameData& game_data) {
+    void iter(Form& form, const GameData& game_data) {
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
         ImGui::BeginChild("BoardForm", ImVec2(0, -1), true, ImGuiWindowFlags_NoScrollWithMouse);
         draw_rects();
@@ -403,29 +401,28 @@ namespace mcts_checkers::board {
         >;
 
         auto new_state = std::visit(
-            [this, &game_data](auto& state) -> IterationResult {
+            [&game_data](auto& state) -> IterationResult {
             return utils::variant_move<IterationResult>(iter(state, game_data));
-        }, m_state);
+        }, form);
 
         std::visit(utils::overloaded{
             [](const StateNotChange) {},
-            [this, &game_data](selection_confirmed::Move) {
-                m_state = utils::variant_move<State>(unselected::determine_form(game_data));
+            [&form, &game_data](selection_confirmed::Move) {
+                form = utils::variant_move<Form>(
+                    unselected::determine_form(game_data)
+                );
             },
-            [this, &game_data](selection_confirmed::Attack&&) {
-                m_state = utils::variant_move<State>(unselected::determine_form(game_data));
+            [&form, &game_data](selection_confirmed::Attack&&) {
+                form = utils::variant_move<Form>(
+                    unselected::determine_form(game_data)
+                );
             },
-            [this](auto&& state) {
-                m_state = utils::checked_move(state);
+            [&form](auto&& state) {
+                form = utils::checked_move(state);
             }
         }, utils::checked_move(new_state));
 
         ImGui::EndChild();
         ImGui::PopStyleVar();
     }
-
-    void Form::change_state(State&& state) {
-        m_state = utils::checked_move(state);
-    }
-
 }

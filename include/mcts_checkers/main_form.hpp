@@ -11,7 +11,7 @@ class MainForm {
         void iter();
 
     private:
-        board::Form m_board_form;
+        board::player::Form m_board_form;
         StatisticForm m_statistic_form;
         GameData m_data;
 };

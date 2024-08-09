@@ -9,7 +9,7 @@ namespace mcts_checkers {
     struct GameData;
 }
 
-namespace mcts_checkers::board {
+namespace mcts_checkers::board::player {
 
     namespace unselected {
         struct AttackForm {
@@ -47,19 +47,13 @@ namespace mcts_checkers::board {
 
     struct InitialState {};
 
-    using State = std::variant<
+    using Form = std::variant<
         InitialState,
-        unselected::AttackForm, unselected::MoveForm,
-        selected::MoveForm, selected::attack::Form
+        unselected::AttackForm,
+        unselected::MoveForm,
+        selected::MoveForm,
+        selected::attack::Form
     >;
 
-    class Form {
-        public:
-            Form();
-            void iter_sss(const GameData& game_data);
-            void change_state(State&& state);
-
-        State m_state = InitialState{};
-    };
-
+    void iter(Form& form, const GameData& game_data);
 }
