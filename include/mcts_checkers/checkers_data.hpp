@@ -10,10 +10,23 @@ namespace mcts_checkers {
         CheckersBitset m_is_king;
     };
 
+    enum class PlayerIndex {
+        FIRST,
+        SECOND
+    };
+
+    // constexpr operator bool(const PlayerIndex index) {
+        // return index == PlayerIndex::SECOND;
+    // }
+
+    constexpr PlayerIndex opposite_player(const PlayerIndex index) {
+        return index == PlayerIndex::FIRST ? PlayerIndex::SECOND : PlayerIndex::FIRST;
+    }
+
     struct GameData {
         GameData()=default;
         CheckersData checkers;
-        bool m_current_player_index = false;
+        PlayerIndex m_current_player_index = PlayerIndex::FIRST;
     };
 
 }

@@ -109,7 +109,7 @@ namespace mcts_checkers::board::human {
 
     bool is_current_player_checker(const GameData& game_data, const CheckerIndex checker_index) {
         return game_data.checkers.m_is_in_place[checker_index]
-            and game_data.checkers.m_player_index[checker_index] == game_data.m_current_player_index;
+            and game_data.checkers.m_player_index[checker_index] == static_cast<bool>(game_data.m_current_player_index);
     }
 
     template<typename Callable>
@@ -463,7 +463,7 @@ namespace mcts_checkers::board {
     };
 
     Form::Form()
-        : m_state{STATE_FACTORIES[m_game_data.m_current_player_index]()} {}
+        : m_state{STATE_FACTORIES[static_cast<uint8_t>(m_game_data.m_current_player_index)]()} {}
 
     void iter(Form& form) {
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
@@ -482,11 +482,11 @@ namespace mcts_checkers::board {
             [](const human_ai_common::PlayerMadeNoSelection) {},
             [&form](const human_ai_common::selection_confirmed::Move& action) {
                 apply_move(form.m_game_data, action.checker_index, action.data);
-                form.m_state = STATE_FACTORIES[form.m_game_data.m_current_player_index]();
+                form.m_state = STATE_FACTORIES[static_cast<uint8_t>(form.m_game_data.m_current_player_index)]();
             },
             [&form](const human_ai_common::selection_confirmed::Attack& action) {
                 apply_attack(form.m_game_data, action.data);
-                form.m_state = STATE_FACTORIES[form.m_game_data.m_current_player_index]();
+                form.m_state = STATE_FACTORIES[static_cast<uint8_t>(form.m_game_data.m_current_player_index)]();
             }
         }, action);
 
