@@ -79,13 +79,13 @@ namespace mcts_checkers {
         };
     }
 
-    void apply_attack_step(GameData& game_data, const BoardIndex start, const BoardIndex end) {
+    void apply_attack_step(CheckersData& checkers, const BoardIndex start, const BoardIndex end) {
         const auto start_vector = VectorInt8(convert_board_index_to_board_vector(start));
         const auto end_vector = VectorInt8(convert_board_index_to_board_vector(end));
         const auto dev = sign(end_vector - start_vector);
         for(auto i = start_vector; i != end_vector; i += dev) {
             const auto index = convert_board_vector_to_checker_index(convert_vectorint8_to_board_vector(i));
-            game_data.checkers.m_is_in_place[index] = false;
+            checkers.m_is_in_place[index] = false;
         }
         const auto start_checker_index = convert_board_vector_to_checker_index(
             convert_vectorint8_to_board_vector(start_vector)
@@ -93,14 +93,14 @@ namespace mcts_checkers {
         const auto end_checker_index = convert_board_vector_to_checker_index(
             convert_vectorint8_to_board_vector(end_vector)
         );
-        game_data.checkers.m_is_in_place[end_checker_index] = true;
-        game_data.checkers.m_is_king[end_checker_index] = game_data.checkers.m_is_king[start_checker_index];
-        game_data.checkers.m_player_index[end_checker_index] = game_data.checkers.m_player_index[start_checker_index];;
+        checkers.m_is_in_place[end_checker_index] = true;
+        checkers.m_is_king[end_checker_index] = checkers.m_is_king[start_checker_index];
+        checkers.m_player_index[end_checker_index] = checkers.m_player_index[start_checker_index];;
     }
 
     void apply_attack(GameData& game_data, const std::vector<AttackAction>& attack_actions) {
         for(size_t i = 0, j = 1; j < attack_actions.size(); ++i, ++j) {
-            apply_attack_step(game_data, attack_actions[i]._val, attack_actions[j]._val);
+            apply_attack_step(game_data.checkers, attack_actions[i]._val, attack_actions[j]._val);
         }
         const auto back_board_index = attack_actions.back()._val;
         const auto back_checker_index = convert_board_index_to_checker_index(back_board_index);

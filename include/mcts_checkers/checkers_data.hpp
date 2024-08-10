@@ -13,7 +13,7 @@ namespace mcts_checkers {
     struct GameData {
         GameData()=default;
         CheckersData checkers;
-        bool m_current_player_index = true;
+        bool m_current_player_index = false;
     };
 
 }

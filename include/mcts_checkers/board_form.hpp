@@ -5,10 +5,24 @@
 #include <vector>
 #include <span>
 #include <tl/optional.hpp>
+#include <future>
+#include <atomic>
 
 namespace mcts_checkers {
     struct GameData;
 }
+
+
+namespace mcts_checkers::board::human_ai_common::selection_confirmed {
+    struct Move {
+        MoveAction data;
+        CheckerIndex checker_index;
+    };
+    struct Attack {
+        std::vector<AttackAction> data;
+    };
+}
+
 
 namespace mcts_checkers::board::human {
 
@@ -63,7 +77,15 @@ namespace mcts_checkers::board::human {
 
 namespace mcts_checkers::board::ai {
 
-    struct Form {};
+    using StrategyResult = std::variant<
+        human_ai_common::selection_confirmed::Move,
+        human_ai_common::selection_confirmed::Attack
+    >;
+
+    struct Form {
+        Form();
+        std::future<StrategyResult> m_task;
+    };
 
 }
 
@@ -74,8 +96,9 @@ namespace mcts_checkers::board {
     >;
 
     struct Form {
-        State m_state{};
+        Form();
         GameData m_game_data{};
+        State m_state;
     };
 
     void iter(Form& form);
