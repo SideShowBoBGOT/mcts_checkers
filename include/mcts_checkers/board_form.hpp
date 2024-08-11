@@ -12,14 +12,21 @@ namespace mcts_checkers {
 }
 
 
-namespace mcts_checkers::board::human_ai_common::selection_confirmed {
-    struct Move {
-        MoveAction data;
-        CheckerIndex checker_index;
-    };
-    struct Attack {
-        std::vector<AttackAction> data;
-    };
+namespace mcts_checkers::board::human_ai_common {
+    namespace selection_confirmed {
+        struct Move {
+            MoveAction data;
+            CheckerIndex checker_index;
+        };
+        struct Attack {
+            std::vector<AttackAction> data;
+        };
+    }
+    namespace available_actions {
+        using Attacks = std::vector<std::pair<CheckerIndex, CollectAttacksResult>>;
+        using Moves = std::vector<std::pair<CheckerIndex, std::vector<MoveAction>>>;
+        using Type = std::variant<Attacks, Moves>;
+    }
 }
 
 
@@ -27,11 +34,11 @@ namespace mcts_checkers::board::human {
 
     namespace unselected {
         struct AttackForm {
-            std::vector<std::pair<CheckerIndex, CollectAttacksResult>> m_actions{};
+            human_ai_common::available_actions::Attacks m_actions{};
         };
 
         struct MoveForm {
-            std::vector<std::pair<CheckerIndex, std::vector<MoveAction>>> m_actions{};
+            human_ai_common::available_actions::Moves m_actions{};
         };
     }
 
@@ -46,7 +53,7 @@ namespace mcts_checkers::board::human {
 
         namespace attack {
             struct Node {
-                tl::optional<BoardIndex> m_index;
+                BoardIndex m_index;
                 std::span<const AttackTree> m_actions;
             };
 
