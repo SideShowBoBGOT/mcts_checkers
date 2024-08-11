@@ -12,7 +12,7 @@ namespace mcts_checkers {
 }
 
 
-namespace mcts_checkers::board::human_ai_common {
+namespace mcts_checkers::board {
     namespace selection_confirmed {
         struct Move {
             MoveAction data;
@@ -23,9 +23,10 @@ namespace mcts_checkers::board::human_ai_common {
         };
     }
     namespace available_actions {
-        using Attacks = std::vector<std::pair<CheckerIndex, CollectAttacksResult>>;
-        using Moves = std::vector<std::pair<CheckerIndex, std::vector<MoveAction>>>;
-        using Type = std::variant<Attacks, Moves>;
+        using Attack = std::vector<std::pair<CheckerIndex, CollectAttacksResult>>;
+        using Move = std::vector<std::pair<CheckerIndex, std::vector<MoveAction>>>;
+        struct None {};
+        using Type = std::variant<None, Attack, Move>;
     }
 }
 
@@ -34,11 +35,11 @@ namespace mcts_checkers::board::human {
 
     namespace unselected {
         struct AttackForm {
-            human_ai_common::available_actions::Attacks m_actions{};
+            available_actions::Attack m_actions{};
         };
 
         struct MoveForm {
-            human_ai_common::available_actions::Moves m_actions{};
+            available_actions::Move m_actions{};
         };
     }
 
@@ -66,11 +67,13 @@ namespace mcts_checkers::board::human {
         }
     }
 
-    struct InitialState {};
+    namespace initial {
+        struct State {};
+    }
 
     using Form = strong::type<
         std::variant<
-            InitialState,
+            initial::State,
             unselected::AttackForm,
             unselected::MoveForm,
             selected::MoveForm,
@@ -84,8 +87,9 @@ namespace mcts_checkers::board::human {
 namespace mcts_checkers::board::ai {
 
     using StrategyResult = std::variant<
-        human_ai_common::selection_confirmed::Move,
-        human_ai_common::selection_confirmed::Attack
+        selection_confirmed::Move,
+        selection_confirmed::Attack,
+        available_actions::None
     >;
 
     struct Form {

@@ -13,14 +13,15 @@
 #include <future>
 #include <random>
 
-namespace mcts_checkers::board::human_ai_common {
+namespace mcts_checkers::board {
 
     struct PlayerMadeNoSelection {};
 
     using IterationResult = std::variant<
         PlayerMadeNoSelection,
         selection_confirmed::Move,
-        selection_confirmed::Attack
+        selection_confirmed::Attack,
+        available_actions::None
     >;
 
     bool is_current_player_checker(const GameData& game_data, const CheckerIndex checker_index) {
@@ -40,25 +41,29 @@ namespace mcts_checkers::board::human_ai_common {
 
     namespace available_actions {
 
+
         Type calc(const GameData& game_data) {
-            auto attacks = Attacks{};
+            auto attacks = Attack{};
             iterate_over_current_player_checkers(game_data,
                 [&attacks](const GameData& game_data, const CheckerIndex checker_index) {
-                    attacks.emplace_back(checker_index, collect_attacks(game_data.checkers, checker_index));
+                    auto collected = collect_attacks(game_data.checkers, checker_index);
+                    if(not collected.actions.empty()) {
+                        attacks.emplace_back(checker_index, collected);
+                    }
                 }
             );
-            const auto max_depth = std::max_element(std::begin(attacks), std::end(attacks),
-                [](const auto& first, const auto& second) {
-                    return first.second.depth < second.second.depth;
-                }
-            )->second.depth;
-            if(max_depth > 0) {
+            if(not attacks.empty()) {
+                const auto max_depth = std::max_element(std::begin(attacks), std::end(attacks),
+                    [](const auto& first, const auto& second) {
+                        return first.second.depth < second.second.depth;
+                    }
+                )->second.depth;
                 attacks.erase(std::remove_if(std::begin(attacks), std::end(attacks),
                     [max_depth](const auto& el) { return el.second.depth < max_depth; }
                 ), std::end(attacks));
                 return attacks;
             }
-            auto moves = Moves{};
+            auto moves = Move{};
             iterate_over_current_player_checkers(game_data,
                 [&moves](const GameData& game_data, const CheckerIndex checker_index) {
                     auto collected_moves = collect_moves(game_data.checkers, checker_index);
@@ -67,7 +72,10 @@ namespace mcts_checkers::board::human_ai_common {
                     }
                 }
             );
-            return moves;
+            if(not moves.empty()) {
+                return moves;
+            }
+            return None{};
         }
 
     }
@@ -250,8 +258,8 @@ namespace mcts_checkers::board::human {
             StateNotChange,
             MoveForm,
             attack::Form,
-            human_ai_common::selection_confirmed::Move,
-            human_ai_common::selection_confirmed::Attack
+            selection_confirmed::Move,
+            selection_confirmed::Attack
         >;
 
         void draw_action_rect(const BoardVector board_vector, const ImU32 color) {
@@ -285,7 +293,7 @@ namespace mcts_checkers::board::human {
             if(it != std::end(form.m_index_actions)) {
                 draw_hovered_cell(checker_board_vector, PURPLE_COLOR);
                 if(ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
-                    return human_ai_common::selection_confirmed::Move{
+                    return selection_confirmed::Move{
                         MoveAction{checker_board_index},
                         form.m_index
                     };
@@ -337,7 +345,7 @@ namespace mcts_checkers::board::human {
                                 })
                             | ranges::to_vector;
                         assert(not actions.empty() && "Actions can not be empty");
-                        return human_ai_common::selection_confirmed::Attack{utils::checked_move(actions)};
+                        return selection_confirmed::Attack{utils::checked_move(actions)};
                     }
                     return StateNotChange{};
                 }
@@ -387,26 +395,38 @@ namespace mcts_checkers::board::human {
         }
     }
 
-    unselected::Form iter(const InitialState, const GameData& game_data) {
-        return std::visit(utils::overloaded{
-            [](human_ai_common::available_actions::Moves&& actions) -> unselected::Form {
-                return unselected::MoveForm{utils::checked_move(actions)};
-            },
-            [](human_ai_common::available_actions::Attacks&& actions) -> unselected::Form {
-                return unselected::AttackForm{utils::checked_move(actions)};
-            }
-        }, human_ai_common::available_actions::calc(game_data));
+    namespace initial {
+        using IterationResult = std::variant<
+            unselected::MoveForm,
+            unselected::AttackForm,
+            available_actions::None
+        >;
     }
 
-    human_ai_common::IterationResult iter(Form& form, const GameData& game_data) {
+    initial::IterationResult iter(const initial::State, const GameData& game_data) {
+        return std::visit(utils::overloaded{
+            [](available_actions::Move&& actions) -> initial::IterationResult {
+                return unselected::MoveForm{utils::checked_move(actions)};
+            },
+            [](available_actions::Attack&& actions) -> initial::IterationResult {
+                return unselected::AttackForm{utils::checked_move(actions)};
+            },
+            [](available_actions::None actions) -> initial::IterationResult {
+                return actions;
+            }
+        }, available_actions::calc(game_data));
+    }
+
+    IterationResult iter(Form& form, const GameData& game_data) {
         using TransitionResult = std::variant<
             StateNotChange,
             unselected::MoveForm,
             unselected::AttackForm,
             selected::MoveForm,
             selected::attack::Form,
-            human_ai_common::selection_confirmed::Move,
-            human_ai_common::selection_confirmed::Attack
+            selection_confirmed::Move,
+            selection_confirmed::Attack,
+            available_actions::None
         >;
 
         auto new_state = std::visit(
@@ -415,20 +435,24 @@ namespace mcts_checkers::board::human {
         }, form.value_of());
 
         return std::visit(utils::overloaded{
-            [](const StateNotChange) -> human_ai_common::IterationResult {
-                return human_ai_common::PlayerMadeNoSelection{};
+            [](const StateNotChange) -> IterationResult {
+                return PlayerMadeNoSelection{};
             },
-            [&form](const human_ai_common::selection_confirmed::Move action) -> human_ai_common::IterationResult {
-                form.value_of() = InitialState{};
+            [&form](const selection_confirmed::Move action) -> IterationResult {
+                form.value_of() = initial::State{};
                 return action;
             },
-            [&form](human_ai_common::selection_confirmed::Attack&& action) -> human_ai_common::IterationResult  {
-                form.value_of() = InitialState{};
+            [&form](selection_confirmed::Attack&& action) -> IterationResult  {
+                form.value_of() = initial::State{};
                 return utils::checked_move(action);
             },
-            [&form](auto&& state) -> human_ai_common::IterationResult {
+            [&form](const available_actions::None action) -> IterationResult {
+                form.value_of() = initial::State{};
+                return action;
+            },
+            [&form](auto&& state) -> IterationResult {
                 form.value_of() = utils::checked_move(state);
-                return human_ai_common::PlayerMadeNoSelection{};
+                return PlayerMadeNoSelection{};
             }
         }, utils::checked_move(new_state));
 
@@ -460,14 +484,16 @@ namespace mcts_checkers::board::ai {
 
         StrategyResult calculate_move(const GameData& game_data) {
             auto generator = std::default_random_engine(std::chrono::system_clock::now().time_since_epoch().count());
-            auto actions = human_ai_common::available_actions::calc(game_data);
             return std::visit(utils::overloaded{
-                [&generator](human_ai_common::available_actions::Moves&& actions) -> StrategyResult {
+                [](const available_actions::None actions) -> StrategyResult {
+                    return actions;
+                },
+                [&generator](available_actions::Move&& actions) -> StrategyResult {
                     const auto& checker_actions = get_random_element(actions, generator);
                     const auto& action = get_random_element(checker_actions.second, generator);
-                    return human_ai_common::selection_confirmed::Move{action, checker_actions.first};
+                    return selection_confirmed::Move{action, checker_actions.first};
                 },
-                [&generator](human_ai_common::available_actions::Attacks&& actions) -> StrategyResult {
+                [&generator](available_actions::Attack&& actions) -> StrategyResult {
                     const auto& checker_actions = get_random_element(actions, generator);
 
                     auto chain = std::vector<AttackAction>{};
@@ -477,9 +503,9 @@ namespace mcts_checkers::board::ai {
                     const auto& start_tree = get_random_element(checker_actions.second.actions, generator);
                     select_attack_chain(start_tree, generator, chain);
 
-                    return human_ai_common::selection_confirmed::Attack{utils::checked_move(chain)};
+                    return selection_confirmed::Attack{utils::checked_move(chain)};
                 }
-            }, utils::checked_move(actions));
+            }, available_actions::calc(game_data));
         }
     }
 
@@ -492,22 +518,22 @@ namespace mcts_checkers::board::ai {
         )
     } {}
 
-    human_ai_common::IterationResult iter(Form& form, const GameData&) {
+    IterationResult iter(Form& form, const GameData&) {
         if(form.m_task.wait_for(std::chrono::system_clock::duration::min()) == std::future_status::ready) {
-            return utils::variant_move<human_ai_common::IterationResult>(form.m_task.get());
+            return utils::variant_move<IterationResult>(form.m_task.get());
         }
-        return human_ai_common::PlayerMadeNoSelection{};
+        return PlayerMadeNoSelection{};
     }
 
 }
 
 namespace mcts_checkers::board {
 
-    human_ai_common::IterationResult iter(human::Form& form, const GameData& game_data) {
+    IterationResult iter(human::Form& form, const GameData& game_data) {
         return human::iter(form, game_data);
     }
 
-    human_ai_common::IterationResult iter(ai::Form& form, const GameData& game_data) {
+    IterationResult iter(ai::Form& form, const GameData& game_data) {
         return ai::iter(form, game_data);
     }
 
@@ -528,18 +554,21 @@ namespace mcts_checkers::board {
 
         const auto action = std::visit(
             [&game_data = std::as_const(form.m_game_data)]
-            (auto& state) -> human_ai_common::IterationResult {
+            (auto& state) -> IterationResult {
                 return board::iter(state, game_data);
             }, form.m_state
         );
 
         std::visit(utils::overloaded{
-            [](const human_ai_common::PlayerMadeNoSelection) {},
-            [&form](const human_ai_common::selection_confirmed::Move& action) {
+            [](const PlayerMadeNoSelection) {},
+            [](const available_actions::None) {
+                std::exit(1);
+            },
+            [&form](const selection_confirmed::Move& action) {
                 apply_move(form.m_game_data, action.checker_index, action.data);
                 form.m_state = STATE_FACTORIES[static_cast<uint8_t>(form.m_game_data.m_current_player_index)](form.m_game_data);
             },
-            [&form](const human_ai_common::selection_confirmed::Attack& action) {
+            [&form](const selection_confirmed::Attack& action) {
                 apply_attack(form.m_game_data, action.data);
                 form.m_state = STATE_FACTORIES[static_cast<uint8_t>(form.m_game_data.m_current_player_index)](form.m_game_data);
             }
