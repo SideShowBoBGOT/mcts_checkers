@@ -6,7 +6,6 @@
 #include <span>
 #include <tl/optional.hpp>
 #include <future>
-#include <atomic>
 
 namespace mcts_checkers {
     struct GameData;
@@ -83,7 +82,7 @@ namespace mcts_checkers::board::ai {
     >;
 
     struct Form {
-        Form();
+        Form(const GameData& game_data);
         std::future<StrategyResult> m_task;
     };
 

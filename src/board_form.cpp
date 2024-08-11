@@ -423,17 +423,22 @@ namespace mcts_checkers::board::human {
 
 namespace mcts_checkers::board::ai {
 
-    Form::Form() : m_task{
+    namespace random {
+        StrategyResult calculate_move(const GameData& game_data) {
+            return StrategyResult{
+                human_ai_common::selection_confirmed::Move{
+                    MoveAction{BoardIndex{0}},
+                    CheckerIndex{0}
+                }
+            };
+        }
+    }
+
+    Form::Form(const GameData& game_data) : m_task{
         std::async(
             std::launch::async,
-            [] -> StrategyResult {
-
-                return StrategyResult{
-                    human_ai_common::selection_confirmed::Move{
-                        MoveAction{BoardIndex{0}},
-                        CheckerIndex{0}
-                    }
-                };
+            [game_data_c = game_data] -> StrategyResult {
+                return random::calculate_move(game_data_c);
             }
         )
     } {}
@@ -457,13 +462,13 @@ namespace mcts_checkers::board {
         return ai::iter(form, game_data);
     }
 
-    static constexpr std::array<State(*)(), 2> STATE_FACTORIES = {
-        [] -> State { return human::Form{}; },
-        [] -> State { return human::Form{}; }
+    static constexpr std::array<State(*)(const GameData&), 2> STATE_FACTORIES = {
+        [](const GameData&) -> State { return human::Form{}; },
+        [](const GameData& game_data) -> State { return ai::Form{game_data}; }
     };
 
     Form::Form()
-        : m_state{STATE_FACTORIES[static_cast<uint8_t>(m_game_data.m_current_player_index)]()} {}
+        : m_state{STATE_FACTORIES[static_cast<uint8_t>(m_game_data.m_current_player_index)](m_game_data)} {}
 
     void iter(Form& form) {
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
@@ -482,11 +487,11 @@ namespace mcts_checkers::board {
             [](const human_ai_common::PlayerMadeNoSelection) {},
             [&form](const human_ai_common::selection_confirmed::Move& action) {
                 apply_move(form.m_game_data, action.checker_index, action.data);
-                form.m_state = STATE_FACTORIES[static_cast<uint8_t>(form.m_game_data.m_current_player_index)]();
+                form.m_state = STATE_FACTORIES[static_cast<uint8_t>(form.m_game_data.m_current_player_index)](form.m_game_data);
             },
             [&form](const human_ai_common::selection_confirmed::Attack& action) {
                 apply_attack(form.m_game_data, action.data);
-                form.m_state = STATE_FACTORIES[static_cast<uint8_t>(form.m_game_data.m_current_player_index)]();
+                form.m_state = STATE_FACTORIES[static_cast<uint8_t>(form.m_game_data.m_current_player_index)](form.m_game_data);
             }
         }, action);
 
