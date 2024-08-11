@@ -5,20 +5,40 @@
 #include <vector>
 #include <span>
 #include <tl/optional.hpp>
+#include <future>
 
 namespace mcts_checkers {
     struct GameData;
 }
 
+
+namespace mcts_checkers::board::human_ai_common {
+    namespace selection_confirmed {
+        struct Move {
+            MoveAction data;
+            CheckerIndex checker_index;
+        };
+        struct Attack {
+            std::vector<AttackAction> data;
+        };
+    }
+    namespace available_actions {
+        using Attacks = std::vector<std::pair<CheckerIndex, CollectAttacksResult>>;
+        using Moves = std::vector<std::pair<CheckerIndex, std::vector<MoveAction>>>;
+        using Type = std::variant<Attacks, Moves>;
+    }
+}
+
+
 namespace mcts_checkers::board::human {
 
     namespace unselected {
         struct AttackForm {
-            std::vector<std::pair<CheckerIndex, CollectAttacksResult>> m_actions{};
+            human_ai_common::available_actions::Attacks m_actions{};
         };
 
         struct MoveForm {
-            std::vector<std::pair<CheckerIndex, std::vector<MoveAction>>> m_actions{};
+            human_ai_common::available_actions::Moves m_actions{};
         };
     }
 
@@ -33,7 +53,7 @@ namespace mcts_checkers::board::human {
 
         namespace attack {
             struct Node {
-                tl::optional<BoardIndex> m_index;
+                BoardIndex m_index;
                 std::span<const AttackTree> m_actions;
             };
 
@@ -63,7 +83,15 @@ namespace mcts_checkers::board::human {
 
 namespace mcts_checkers::board::ai {
 
-    struct Form {};
+    using StrategyResult = std::variant<
+        human_ai_common::selection_confirmed::Move,
+        human_ai_common::selection_confirmed::Attack
+    >;
+
+    struct Form {
+        Form(const GameData& game_data);
+        std::future<StrategyResult> m_task;
+    };
 
 }
 
@@ -74,8 +102,9 @@ namespace mcts_checkers::board {
     >;
 
     struct Form {
-        State m_state{};
+        Form();
         GameData m_game_data{};
+        State m_state;
     };
 
     void iter(Form& form);

@@ -17,12 +17,13 @@ namespace mcts_checkers {
         game_data.checkers.m_is_in_place[move_action_index] = true;
 
         {
-            const auto is_king_pos = convert_board_index_to_board_vector(move_action._val).y == KING_Y_POSITIONS[game_data.m_current_player_index];
+            const auto y_pos = convert_board_index_to_board_vector(move_action._val).y;
+            const auto is_king_pos = y_pos == KING_Y_POSITIONS[static_cast<uint8_t>(game_data.m_current_player_index)];
             game_data.checkers.m_is_king[move_action_index] = is_king_pos ? true : game_data.checkers.m_is_king[checker_index];
         }
 
         game_data.checkers.m_player_index[move_action_index] = game_data.checkers.m_player_index[checker_index];
-        game_data.m_current_player_index = not game_data.m_current_player_index;
+        game_data.m_current_player_index = opposite_player(game_data.m_current_player_index);
     }
 
     struct VectorInt8 {
@@ -79,13 +80,13 @@ namespace mcts_checkers {
         };
     }
 
-    void apply_attack_step(GameData& game_data, const BoardIndex start, const BoardIndex end) {
+    void apply_attack_step(CheckersData& checkers, const BoardIndex start, const BoardIndex end) {
         const auto start_vector = VectorInt8(convert_board_index_to_board_vector(start));
         const auto end_vector = VectorInt8(convert_board_index_to_board_vector(end));
         const auto dev = sign(end_vector - start_vector);
         for(auto i = start_vector; i != end_vector; i += dev) {
             const auto index = convert_board_vector_to_checker_index(convert_vectorint8_to_board_vector(i));
-            game_data.checkers.m_is_in_place[index] = false;
+            checkers.m_is_in_place[index] = false;
         }
         const auto start_checker_index = convert_board_vector_to_checker_index(
             convert_vectorint8_to_board_vector(start_vector)
@@ -93,21 +94,22 @@ namespace mcts_checkers {
         const auto end_checker_index = convert_board_vector_to_checker_index(
             convert_vectorint8_to_board_vector(end_vector)
         );
-        game_data.checkers.m_is_in_place[end_checker_index] = true;
-        game_data.checkers.m_is_king[end_checker_index] = game_data.checkers.m_is_king[start_checker_index];
-        game_data.checkers.m_player_index[end_checker_index] = game_data.checkers.m_player_index[start_checker_index];;
+        checkers.m_is_in_place[end_checker_index] = true;
+        checkers.m_is_king[end_checker_index] = checkers.m_is_king[start_checker_index];
+        checkers.m_player_index[end_checker_index] = checkers.m_player_index[start_checker_index];;
     }
 
     void apply_attack(GameData& game_data, const std::vector<AttackAction>& attack_actions) {
         for(size_t i = 0, j = 1; j < attack_actions.size(); ++i, ++j) {
-            apply_attack_step(game_data, attack_actions[i]._val, attack_actions[j]._val);
+            apply_attack_step(game_data.checkers, attack_actions[i]._val, attack_actions[j]._val);
         }
         const auto back_board_index = attack_actions.back()._val;
         const auto back_checker_index = convert_board_index_to_checker_index(back_board_index);
-        const auto is_king_pos = convert_board_index_to_board_vector(back_board_index).y == KING_Y_POSITIONS[game_data.m_current_player_index];
+        const auto y_pos = convert_board_index_to_board_vector(back_board_index).y;
+        const auto is_king_pos = y_pos == KING_Y_POSITIONS[static_cast<uint8_t>(game_data.m_current_player_index)];
         game_data.checkers.m_is_king[back_checker_index] = is_king_pos ? true : game_data.checkers.m_is_king[back_checker_index];
 
-        game_data.m_current_player_index = not game_data.m_current_player_index;
+        game_data.m_current_player_index = opposite_player(game_data.m_current_player_index);
     }
 
 }
