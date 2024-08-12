@@ -79,37 +79,36 @@ static constexpr auto DEVIATIONS = std::array{
                 while(y != bound_y and x != bound_x) {
                     const auto enemy_board_index = BoardVector{static_cast<uint8_t>(x), static_cast<uint8_t>(y)};
                     const auto enemy_checker_index = convert_board_vector_to_checker_index(enemy_board_index);
-                    if(
-                        data.m_is_in_place[enemy_checker_index]
-                        and data.m_player_index[enemy_checker_index] != checker_player
-                    ) {
-                        auto block_y = static_cast<int8_t>(y + dev_y);
-                        auto block_x = static_cast<int8_t>(x + dev_x);
+                    if(data.m_is_in_place[enemy_checker_index]) {
+                        if(data.m_player_index[enemy_checker_index] != checker_player) {
+                            auto block_y = static_cast<int8_t>(y + dev_y);
+                            auto block_x = static_cast<int8_t>(x + dev_x);
 
-                        while(block_y != bound_y and block_x != bound_x) {
+                            while(block_y != bound_y and block_x != bound_x) {
 
-                            const auto block_board_vector = BoardVector{static_cast<uint8_t>(block_x), static_cast<uint8_t>(block_y)};
-                            const auto block_checker_index = convert_board_vector_to_checker_index(block_board_vector);
+                                const auto block_board_vector = BoardVector{static_cast<uint8_t>(block_x), static_cast<uint8_t>(block_y)};
+                                const auto block_checker_index = convert_board_vector_to_checker_index(block_board_vector);
 
-                            if(data.m_is_in_place[block_checker_index]) break;
+                                if(data.m_is_in_place[block_checker_index]) break;
 
-                            auto& attack_action = actions.emplace_back(convert_checker_index_to_board_index(block_checker_index));
+                                auto& attack_action = actions.emplace_back(convert_checker_index_to_board_index(block_checker_index));
 
-                            auto new_data = data;
-                            new_data.m_is_in_place[enemy_checker_index] = false;
-                            new_data.m_is_in_place[checker_index] = false;
-                            new_data.m_is_in_place[block_checker_index] = true;
-                            new_data.m_player_index[block_checker_index] = checker_player;
-                            new_data.m_is_king[block_checker_index] = is_king;
+                                auto new_data = data;
+                                new_data.m_is_in_place[enemy_checker_index] = false;
+                                new_data.m_is_in_place[checker_index] = false;
+                                new_data.m_is_in_place[block_checker_index] = true;
+                                new_data.m_player_index[block_checker_index] = checker_player;
+                                new_data.m_is_king[block_checker_index] = is_king;
 
-                            auto [action, action_size] = collect_attacks(new_data, block_checker_index);
-                            action_sizes.emplace_back(action_size + 1);
-                            attack_action.m_child_trees = std::move(action);
+                                auto [action, action_size] = collect_attacks(new_data, block_checker_index);
+                                action_sizes.emplace_back(action_size + 1);
+                                attack_action.m_child_trees = std::move(action);
 
-                            if(not is_king) break;
+                                if(not is_king) break;
 
-                            block_y = static_cast<int8_t>(block_y + dev_y);
-                            block_x = static_cast<int8_t>(block_x + dev_x);
+                                block_y = static_cast<int8_t>(block_y + dev_y);
+                                block_x = static_cast<int8_t>(block_x + dev_x);
+                            }
                         }
                         break;
                     }

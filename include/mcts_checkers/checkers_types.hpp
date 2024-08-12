@@ -18,13 +18,17 @@ namespace mcts_checkers {
 
     using CheckersBitset = strong::type<std::bitset<CHEKCERS_CELLS_COUNT>, struct CheckersBitset_, strong::indexed<CheckerIndex>>;
     using BoardIndex = strong::type<uint8_t, struct BoardIndex_, strong::equality, strong::hashable>;
-    using MoveAction = strong::type<BoardIndex, struct MoveAction_>;
+    using MoveAction = strong::type<BoardIndex, struct MoveAction_, strong::equality, strong::hashable>;
     using AttackAction = strong::type<BoardIndex, struct MoveAction_>;
 
     struct BoardVector {
         uint8_t x{};
         uint8_t y{};
     };
+    constexpr bool operator==(const BoardVector first, const BoardVector second) {
+        return first.x == second.x and first.y == second.y;
+    }
+
     struct AttackTree {
         BoardIndex m_board_index{strong::uninitialized};
         std::vector<AttackTree> m_child_trees{};
