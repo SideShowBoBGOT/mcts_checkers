@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <mcts_checkers_test/mcts_checkers_test.hpp>
+#include <mcts_checkers/index_converters.hpp>
 #include <fstream>
 #include <filesystem>
 

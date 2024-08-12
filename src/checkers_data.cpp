@@ -10,31 +10,31 @@ namespace mcts_checkers {
 
     static const auto DEFAULT_PLAYER_INDEX = std::bitset<CHEKCERS_CELLS_COUNT>{
         get_reversed_string(
-            "00000"
-            "00000"
-            "00000"
-            "00000"
-            "00000"
-            "00000"
             "11111"
             "11111"
             "11111"
-            "11111"
+            "00000"
+            "00000"
+            "00000"
+            "00000"
+            "00000"
+            "00000"
+            "00000"
         )
     };
 
     static const auto DEFAULT_IS_IN_PLACE = std::bitset<CHEKCERS_CELLS_COUNT>{
         get_reversed_string(
-            "01111"
-            "11111"
-            "10001"
-            "11111"
-            "01000"
-            "01111"
-            "11111"
-            "11111"
-            "11111"
-            "11111"
+            "00000"
+            "00000"
+            "00010"
+            "00000"
+            "00100"
+            "00000"
+            "00000"
+            "00000"
+            "10000"
+            "00000"
         )
     };
 
@@ -63,8 +63,8 @@ namespace mcts_checkers {
             "00000"
             "00000"
             "00000"
-            "00000"
-            "00000"
+            "11111"
+            "11111"
         )
     };
 

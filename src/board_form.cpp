@@ -379,7 +379,8 @@ namespace mcts_checkers::board::human {
         const auto draw_list = ImGui::GetWindowDrawList();
         const auto cell_size = calc_cell_size();
         const auto half_cell_size = cell_size / 2;
-        const auto pawn_radius = half_cell_size * 0.8;
+        constexpr auto radius_modifier = 0.8f;
+        const auto pawn_radius = half_cell_size * radius_modifier;
         const auto king_hat_radius = half_cell_size / 2;
         auto checker_index = CheckerIndex{0};
         for(uint8_t y = 0; y < CELLS_PER_SIDE; ++y) {

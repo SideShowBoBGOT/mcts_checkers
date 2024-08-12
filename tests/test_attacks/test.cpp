@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <mcts_checkers_test/mcts_checkers_test.hpp>
+#include <mcts_checkers/action_collection_funcs.hpp>
 
 #include <filesystem>
 #include <fstream>
@@ -71,6 +72,6 @@ TEST(TestAttacks, Sanity) {
     for(const auto& json_test_data : json_file) {
         const auto test_data = json_test_data.get<TestData>();
         const auto result = mcts_checkers::collect_attacks(test_data.board, test_data.checker_vector);
-        validate_actions_equal(result.first, test_data.result);
+        validate_actions_equal(result.actions, test_data.result);
     }
 }
