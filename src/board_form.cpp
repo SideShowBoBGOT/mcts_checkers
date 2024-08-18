@@ -80,7 +80,7 @@ namespace mcts_checkers::board {
             if(not moves.empty()) {
                 return moves;
             }
-            return DeclareLoss{};
+            return DeclareLoss{game_data.m_current_player_index};
         }
 
     }
@@ -528,6 +528,75 @@ namespace mcts_checkers::board::ai {
         }
     }
 
+    namespace mcts {
+        struct Node {
+            uint64_t m_visits = 0;
+            int64_t m_value = 0;
+            Node* m_parent = nullptr;
+            GameData m_game_data{};
+            std::vector<Node> m_children{};
+        };
+
+        void back_propagate(Node& node) {
+            ++node.m_visits;
+            auto parent = node.m_parent;
+            while(node.m_parent != nullptr) {
+                parent->m_value += node.m_value;
+                ++parent->m_visits;
+                parent = parent->m_parent;
+            }
+        }
+
+        void rollout(Node& node) {
+            auto game_data = node.m_game_data;
+
+            while(
+                std::visit(utils::overloaded{
+                    [&const_game_data = std::as_const(game_data), &node](const turn_actions::DeclareLoss action) {
+                        node.m_value += const_game_data.m_current_player_index == action.m_player_index ? -1 : 1;
+                        return false;
+                    },
+                    [](const turn_actions::DeclareDraw) {
+                        return false;
+                    },
+                    [&game_data](const selection_confirmed::Move& action) {
+                        apply_move(game_data, action.checker_index, action.data);
+                        return true;
+                    },
+                    [&game_data](const selection_confirmed::Attack& action) {
+                        apply_attack(game_data, action.data);
+                        return true;
+                    }
+                }, random::calculate_move(game_data))
+            ) {}
+        }
+
+        StrategyResult calculate_move(const GameData& game_data) {
+            auto node = Node{0, 0, nullptr, game_data};
+
+            if(node.m_children.empty()) {
+                if(node.m_visits == 0) {
+                    rollout(node);
+                    back_propagate(node);
+                } else {
+                    std::visit(utils::overloaded{
+                       [&game_data](const selection_confirmed::Move& action) {
+                           apply_move(game_data, action.checker_index, action.data);
+                           return true;
+                       },
+                       [&game_data](const selection_confirmed::Attack& action) {
+                           apply_attack(game_data, action.data);
+                           return true;
+                       },
+                       [](auto&&) {}
+                   }, random::calculate_move(game_data));
+                }
+            } else {
+
+            }
+        }
+    }
+
     Form::Form(const GameData& game_data) : m_task{
         std::async(
             std::launch::async,
@@ -590,8 +659,8 @@ namespace mcts_checkers::board {
             [&game_data=std::as_const(form.m_game_data)](const PlayerMadeNoSelection) -> OutMessage {
                 return MakingDecision{game_data.m_current_player_index};
             },
-            [&game_data=std::as_const(form.m_game_data)](const turn_actions::DeclareLoss) -> OutMessage {
-                return DeclareWin{game_data.m_current_player_index};
+            [](const turn_actions::DeclareLoss action) -> OutMessage {
+                return DeclareWin{opposite_player(action.m_player_index)};
             },
             [&game_data=std::as_const(form.m_game_data)](const turn_actions::DeclareDraw) -> OutMessage {
                 return DeclareDraw{};
