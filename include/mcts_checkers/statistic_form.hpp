@@ -1,11 +1,14 @@
 #pragma once
+#include <variant>
 
-namespace mcts_checkers {
+namespace mcts_checkers::statistic {
 
-    class StatisticForm {
-        public:
-            StatisticForm();
-            void iter();
-    };
+    struct Nothing {};
+    struct ReplayGame {};
+
+    using Message = std::variant<Nothing, ReplayGame>;
+
+    struct Form {};
+    Message iter_out(const Form& stat);
 
 }

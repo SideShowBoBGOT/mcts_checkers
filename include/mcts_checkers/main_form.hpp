@@ -12,7 +12,7 @@ class MainForm {
 
     private:
         board::Form m_board_form;
-        StatisticForm m_statistic_form;
+        statistic::Form m_statistic_form;
         GameData m_data;
 };
 

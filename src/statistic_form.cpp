@@ -1,15 +1,25 @@
 #include <mcts_checkers/statistic_form.hpp>
 #include <imgui.h>
 
-namespace mcts_checkers {
+#include <mcts_checkers/utils.hpp>
+
+namespace mcts_checkers::statistic {
 
     static constexpr auto FORM_WIDTH = 400.f;
 
-    StatisticForm::StatisticForm()=default;
-
-    void StatisticForm::iter() {
+    Message iter_out(const Form& stat) {
         ImGui::BeginChild("StatisticForm", ImVec2(FORM_WIDTH, -1), true);
-        ImGui::EndChild();
+        ON_SCOPE_EXIT {
+            ImGui::EndChild();
+        };
+
+        ImGui::NewLine();
+
+        if(ImGui::Button("Replay", ImVec2(70, 30))) {
+            return ReplayGame{};
+        }
+
+        return Nothing{};
     }
 
 }

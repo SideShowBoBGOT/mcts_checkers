@@ -16,8 +16,8 @@
 namespace mcts_checkers {
 
 static constexpr auto DEVIATIONS = std::array{
-        std::array<int8_t, 2>{CELLS_PER_SIDE, +1},
         std::array<int8_t, 2>{-1, -1},
+        std::array<int8_t, 2>{CELLS_PER_SIDE, +1},
     };
 
     std::vector<MoveAction> collect_moves(const CheckersData& data, const BoardVector checker_board_vector) {

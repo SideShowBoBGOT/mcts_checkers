@@ -4,13 +4,11 @@
 #include <variant>
 #include <vector>
 #include <span>
-#include <tl/optional.hpp>
 #include <future>
 
 namespace mcts_checkers {
     struct GameData;
 }
-
 
 namespace mcts_checkers::board {
     namespace selection_confirmed {
@@ -111,5 +109,5 @@ namespace mcts_checkers::board {
         State m_state;
     };
 
-    void iter(Form& form);
+    void iter_out(Form& form);
 }

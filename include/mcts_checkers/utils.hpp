@@ -1,7 +1,24 @@
 #pragma once
 #define IMGUI_DEFINE_MATH_OPERATORS
-#include <imgui_internal.h>
 #include <variant>
+
+#define ON_SCOPE_EXIT_CAT2(x, y) x##y
+#define ON_SCOPE_EXIT_CAT(x, y) ON_SCOPE_EXIT_CAT2(x, y)
+#define ON_SCOPE_EXIT                   auto const ON_SCOPE_EXIT_CAT(__on_scope_exit_, __LINE__) = on_scope_exit_init | [&]()
+#define INLINE                          inline __attribute__((always_inline))
+
+constexpr struct on_scope_exit_init_t {} on_scope_exit_init;
+
+template<typename ToDo>
+struct on_scope_exit_t : ToDo {
+    on_scope_exit_t(ToDo&& todo) : ToDo{ todo } {}
+    ~on_scope_exit_t() { (*this)(); }
+};
+
+template<typename ToDo>
+auto operator |(on_scope_exit_init_t, ToDo&& todo) {
+    return on_scope_exit_t<ToDo>{ std::forward<ToDo>(todo) };
+}
 
 namespace mcts_checkers {
 
@@ -27,6 +44,8 @@ namespace mcts_checkers {
                 return utils::checked_move(el);
             }, utils::checked_move(from_variant));
         }
+
+
 
     }
 }

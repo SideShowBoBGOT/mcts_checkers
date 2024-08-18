@@ -5,8 +5,8 @@
 namespace mcts_checkers {
 
     static constexpr std::array<uint8_t, 2> KING_Y_POSITIONS = {
+        0,
         static_cast<uint8_t>(CELLS_PER_SIDE - 1),
-        0
     };
 
 
@@ -30,7 +30,7 @@ namespace mcts_checkers {
         constexpr VectorInt8()=default;
         constexpr VectorInt8(const int8_t x, const int8_t y)
             : m_x{x}, m_y{y} {}
-        explicit VectorInt8(const BoardVector v) :
+        constexpr explicit VectorInt8(const BoardVector v) :
             m_x{static_cast<int8_t>(v.x)},
             m_y{static_cast<int8_t>(v.y)}
         {}
@@ -39,48 +39,48 @@ namespace mcts_checkers {
         int8_t m_y{};
     };
 
-    VectorInt8 operator-(const VectorInt8 first, const VectorInt8 second) {
+    static constexpr VectorInt8 operator-(const VectorInt8 first, const VectorInt8 second) {
         return VectorInt8{
             static_cast<int8_t>(first.m_x - second.m_x),
             static_cast<int8_t>(first.m_y - second.m_y)
         };
     }
 
-    VectorInt8 operator+(const VectorInt8 first, const VectorInt8 second) {
+    static constexpr VectorInt8 operator+(const VectorInt8 first, const VectorInt8 second) {
         return VectorInt8{
             static_cast<int8_t>(first.m_x + second.m_x),
             static_cast<int8_t>(first.m_y + second.m_y)
         };
     }
 
-    VectorInt8& operator+=(VectorInt8& first, const VectorInt8 second) {
+    static VectorInt8& operator+=(VectorInt8& first, const VectorInt8 second) {
         first = first + second;
         return first;
     }
 
-    bool operator==(const VectorInt8 first, const VectorInt8 second) {
+    static constexpr bool operator==(const VectorInt8 first, const VectorInt8 second) {
         return first.m_x == second.m_x and first.m_y == second.m_y;
     }
 
-    constexpr int8_t sign(const int8_t val) {
+    static constexpr int8_t sign(const int8_t val) {
         return val == 0 ? static_cast<int8_t>(0) : static_cast<int8_t>(val > 0 ? 1 : -1);
     }
 
-    VectorInt8 sign(const VectorInt8 v) {
+    static constexpr VectorInt8 sign(const VectorInt8 v) {
         return {
             sign(v.m_x),
             sign(v.m_y),
         };
     }
 
-    BoardVector convert_vectorint8_to_board_vector(const VectorInt8 v) {
+    static constexpr BoardVector convert_vectorint8_to_board_vector(const VectorInt8 v) {
         return {
             static_cast<uint8_t>(v.m_x),
             static_cast<uint8_t>(v.m_y)
         };
     }
 
-    void apply_attack_step(CheckersData& checkers, const BoardIndex start, const BoardIndex end) {
+    static void apply_attack_step(CheckersData& checkers, const BoardIndex start, const BoardIndex end) {
         const auto start_vector = VectorInt8(convert_board_index_to_board_vector(start));
         const auto end_vector = VectorInt8(convert_board_index_to_board_vector(end));
         const auto dev = sign(end_vector - start_vector);

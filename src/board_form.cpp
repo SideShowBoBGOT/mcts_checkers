@@ -12,6 +12,7 @@
 #include <mcts_checkers/action_application_funcs.hpp>
 #include <future>
 #include <random>
+#include <imgui_internal.h>
 
 namespace mcts_checkers::board {
 
@@ -24,13 +25,13 @@ namespace mcts_checkers::board {
         available_actions::None
     >;
 
-    bool is_current_player_checker(const GameData& game_data, const CheckerIndex checker_index) {
+    static bool is_current_player_checker(const GameData& game_data, const CheckerIndex checker_index) {
         return game_data.checkers.m_is_in_place[checker_index]
             and game_data.checkers.m_player_index[checker_index] == static_cast<bool>(game_data.m_current_player_index);
     }
 
     template<typename Callable>
-        void iterate_over_current_player_checkers(const GameData& game_data, Callable&& callable) {
+    static void iterate_over_current_player_checkers(const GameData& game_data, Callable&& callable) {
         for(uint8_t i = 0; i < CHEKCERS_CELLS_COUNT; ++i) {
             const auto checker_index = CheckerIndex{i};
             if(is_current_player_checker(game_data, checker_index)) {
@@ -41,8 +42,7 @@ namespace mcts_checkers::board {
 
     namespace available_actions {
 
-
-        Type calc(const GameData& game_data) {
+        static Type calc(const GameData& game_data) {
             auto attacks = Attack{};
             iterate_over_current_player_checkers(game_data,
                 [&attacks](const GameData& game_data, const CheckerIndex checker_index) {
@@ -111,75 +111,75 @@ namespace mcts_checkers::board::human {
         return ImGui::GetWindowSize() / CELLS_PER_SIDE;
     }
 
-    ImVec2 calc_mouse_local_window_pos() {
+    static ImVec2 calc_mouse_local_window_pos() {
         return ImGui::GetMousePos() - ImGui::GetCursorScreenPos();
     }
 
-    ImVec2 convert_board_vector_to_imvec(const BoardVector board_index) {
+    static constexpr ImVec2 convert_board_vector_to_imvec(const BoardVector board_index) {
         return ImVec2{
             static_cast<float>(board_index.x),
             static_cast<float>(board_index.y)
         };
     }
 
-    BoardVector convert_imvec_to_board_vector(const ImVec2 imvec) {
+    static constexpr BoardVector convert_imvec_to_board_vector(const ImVec2 imvec) {
         return BoardVector{
             static_cast<uint8_t>(imvec.x),
             static_cast<uint8_t>(imvec.y)
         };
     }
 
-    ImVec2 calc_cell_top_left(const BoardVector board_index) {
+    static ImVec2 calc_cell_top_left(const BoardVector board_index) {
         return calc_cell_size() * convert_board_vector_to_imvec(board_index) + ImGui::GetCursorScreenPos();
     }
 
-    constexpr uint8_t convert_board_index(const ImVec2ih board_index) {
+    static constexpr uint8_t convert_board_index(const ImVec2ih board_index) {
         return board_index.y * CELLS_PER_SIDE + board_index.x;
     }
 
-    constexpr bool is_white_cell(const BoardVector cell_index) {
+    static constexpr bool is_white_cell(const BoardVector cell_index) {
         return is_even(cell_index.y) == is_even(cell_index.x);
     }
 
-    tl::optional<CheckerIndex> try_convert_board_vector_to_checker_index(const BoardVector cell_index) {
+    static constexpr tl::optional<CheckerIndex> try_convert_board_vector_to_checker_index(const BoardVector cell_index) {
         if(is_white_cell(cell_index)) {
             return tl::nullopt;
         }
         return convert_board_vector_to_checker_index(cell_index);
     }
 
-    BoardVector calc_hovered_cell() {
+    static BoardVector calc_hovered_cell() {
         return convert_imvec_to_board_vector(calc_mouse_local_window_pos() / calc_cell_size());
     }
 
-    void draw_hovered_cell(const BoardVector checker_board_vector, const ImU32 color) {
+    static void draw_hovered_cell(const BoardVector checker_board_vector, const ImU32 color) {
         const auto cell_size = calc_cell_size();
         const auto p_min = calc_cell_top_left(checker_board_vector);
         const auto p_max = p_min + cell_size;
         ImGui::GetWindowDrawList()->AddRect(p_min, p_max, color, 0, 0, 8);
     }
 
-    void draw_hovered_cell(const CheckerIndex checker_index, const ImU32 color) {
+    static void draw_hovered_cell(const CheckerIndex checker_index, const ImU32 color) {
         draw_hovered_cell(convert_checker_index_to_board_vector(checker_index), color);
     }
 
     struct StateNotChange{};
 
-    bool is_window_hovered() {
+    static bool is_window_hovered() {
         return ImGui::IsWindowHovered(ImGuiHoveredFlags_None);
     }
 
     namespace unselected_selected_common {
 
         template<typename ActionsType>
-        void draw_action_cells(const std::vector<std::pair<CheckerIndex, ActionsType>>& actions) {
+        static void draw_action_cells(const std::vector<std::pair<CheckerIndex, ActionsType>>& actions) {
             for(const auto& el : actions) {
                 draw_hovered_cell(convert_checker_index_to_board_vector(el.first), PURPLE_BLUE_COLOR);
             }
         }
 
         template<typename SelectedForm, typename Form>
-        std::variant<StateNotChange, SelectedForm> select_checker(Form& form) {
+        static std::variant<StateNotChange, SelectedForm> select_checker(Form& form) {
             assert(is_window_hovered() && "Window is not hovered");
 
             const auto checker_board_vector = calc_hovered_cell();
@@ -205,7 +205,7 @@ namespace mcts_checkers::board::human {
         using Form = std::variant<MoveForm, AttackForm>;
 
         template<typename SelectedForm, typename Form>
-        std::variant<StateNotChange, SelectedForm> iter(Form& form) {
+        static std::variant<StateNotChange, SelectedForm> iter(Form& form) {
             unselected_selected_common::draw_action_cells(form.m_actions);
             if(is_window_hovered()) {
                 return unselected_selected_common::select_checker<SelectedForm>(form);
@@ -215,13 +215,13 @@ namespace mcts_checkers::board::human {
 
     }
 
-    std::variant<StateNotChange, selected::attack::Form> iter(
+    static std::variant<StateNotChange, selected::attack::Form> iter(
         unselected::AttackForm& form, const GameData&
     ) {
         return unselected::iter<selected::attack::Form>(form);
     }
 
-    std::variant<StateNotChange, selected::MoveForm> iter(
+    static std::variant<StateNotChange, selected::MoveForm> iter(
         unselected::MoveForm& form, const GameData&
     ) {
         return unselected::iter<selected::MoveForm>(form);
@@ -547,9 +547,14 @@ namespace mcts_checkers::board {
     Form::Form()
         : m_state{STATE_FACTORIES[static_cast<uint8_t>(m_game_data.m_current_player_index)](m_game_data)} {}
 
-    void iter(Form& form) {
+    void iter_out(Form& form) {
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
         ImGui::BeginChild("BoardForm", ImVec2(0, -1), true, ImGuiWindowFlags_NoScrollWithMouse);
+        ON_SCOPE_EXIT {
+            ImGui::EndChild();
+            ImGui::PopStyleVar();
+        };
+
         human::draw_rects();
         human::draw_checkers(form.m_game_data);
 
@@ -574,10 +579,6 @@ namespace mcts_checkers::board {
                 form.m_state = STATE_FACTORIES[static_cast<uint8_t>(form.m_game_data.m_current_player_index)](form.m_game_data);
             }
         }, action);
-
-
-        ImGui::EndChild();
-        ImGui::PopStyleVar();
     }
 
 }
