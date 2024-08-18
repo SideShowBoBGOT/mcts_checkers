@@ -485,7 +485,7 @@ namespace mcts_checkers::board::ai {
             return v[distribution(generator)];
         }
 
-        void select_attack_chain(
+        static void select_attack_chain(
             const AttackTree& tree,
             std::default_random_engine& generator,
             std::vector<AttackAction>& chain
@@ -498,7 +498,32 @@ namespace mcts_checkers::board::ai {
             select_attack_chain(child_tree, generator, chain);
         }
 
-        StrategyResult calculate_move(const GameData& game_data) {
+        static selection_confirmed::Move select_random_move(
+            turn_actions::MakeMove&& action,
+            std::default_random_engine& generator
+        ) {
+            const auto& checker_actions = get_random_element(action, generator);
+            const auto& specific_move = get_random_element(checker_actions.second, generator);
+            return selection_confirmed::Move{specific_move, checker_actions.first};
+        }
+
+        static selection_confirmed::Attack select_random_attack(
+            turn_actions::MakeAttack&& action,
+            std::default_random_engine& generator
+        ) {
+            const auto& checker_actions = get_random_element(action, generator);
+
+            auto chain = std::vector<AttackAction>{};
+            chain.reserve(checker_actions.second.depth + 1);
+            chain.emplace_back(convert_checker_index_to_board_index(checker_actions.first));
+
+            const auto& start_tree = get_random_element(checker_actions.second.actions, generator);
+            select_attack_chain(start_tree, generator, chain);
+
+            return selection_confirmed::Attack{utils::checked_move(chain)};
+        }
+
+        static StrategyResult calculate_move(const GameData& game_data) {
             auto generator = std::default_random_engine(std::chrono::system_clock::now().time_since_epoch().count());
             return std::visit(utils::overloaded{
                 [](const turn_actions::DeclareLoss action) -> StrategyResult {
@@ -508,21 +533,10 @@ namespace mcts_checkers::board::ai {
                     return action;
                 },
                 [&generator](turn_actions::MakeMove&& action) -> StrategyResult {
-                    const auto& checker_actions = get_random_element(action, generator);
-                    const auto& specific_move = get_random_element(checker_actions.second, generator);
-                    return selection_confirmed::Move{specific_move, checker_actions.first};
+                    return select_random_move(utils::checked_move(action), generator);
                 },
                 [&generator](turn_actions::MakeAttack&& action) -> StrategyResult {
-                    const auto& checker_actions = get_random_element(action, generator);
-
-                    auto chain = std::vector<AttackAction>{};
-                    chain.reserve(checker_actions.second.depth + 1);
-                    chain.emplace_back(convert_checker_index_to_board_index(checker_actions.first));
-
-                    const auto& start_tree = get_random_element(checker_actions.second.actions, generator);
-                    select_attack_chain(start_tree, generator, chain);
-
-                    return selection_confirmed::Attack{utils::checked_move(chain)};
+                    return select_random_attack(utils::checked_move(action), generator);
                 }
             }, turn_actions::determine(game_data));
         }
@@ -530,6 +544,8 @@ namespace mcts_checkers::board::ai {
 
     namespace mcts {
         struct Node {
+            Node(Node* const parent, const GameData& game_data)
+                : m_parent(parent), m_game_data(game_data) {}
             uint64_t m_visits = 0;
             int64_t m_value = 0;
             Node* m_parent = nullptr;
@@ -537,7 +553,7 @@ namespace mcts_checkers::board::ai {
             std::vector<Node> m_children{};
         };
 
-        void back_propagate(Node& node) {
+        static void back_propagate(Node& node) {
             ++node.m_visits;
             auto parent = node.m_parent;
             while(node.m_parent != nullptr) {
@@ -547,9 +563,11 @@ namespace mcts_checkers::board::ai {
             }
         }
 
-        void rollout(Node& node) {
+        void rollout(
+            Node& node,
+            std::default_random_engine& generator
+        ) {
             auto game_data = node.m_game_data;
-
             while(
                 std::visit(utils::overloaded{
                     [&const_game_data = std::as_const(game_data), &node](const turn_actions::DeclareLoss action) {
@@ -559,37 +577,100 @@ namespace mcts_checkers::board::ai {
                     [](const turn_actions::DeclareDraw) {
                         return false;
                     },
-                    [&game_data](const selection_confirmed::Move& action) {
-                        apply_move(game_data, action.checker_index, action.data);
+                    [&game_data, &generator](turn_actions::MakeMove&& action) {
+                        const auto confirmed_action = random::select_random_move(utils::checked_move(action), generator);
+                        apply_move(game_data, confirmed_action.checker_index, confirmed_action.data);
                         return true;
                     },
-                    [&game_data](const selection_confirmed::Attack& action) {
-                        apply_attack(game_data, action.data);
+                    [&game_data, &generator](turn_actions::MakeAttack&& action) {
+                        const auto confirmed_action = random::select_random_attack(utils::checked_move(action), generator);
+                        apply_attack(game_data, confirmed_action.data);
                         return true;
                     }
-                }, random::calculate_move(game_data))
+                }, turn_actions::determine(game_data))
             ) {}
         }
 
+        void rollout_back_propagate(Node& node, std::default_random_engine& generator) {
+            rollout(node, generator);
+            back_propagate(node);
+        }
+
+        void back_propagate_terminal(Node& node) {
+            ++node.m_visits;
+            auto parent = node.m_parent;
+            while(node.m_parent != nullptr) {
+                ++parent->m_visits;
+                parent = parent->m_parent;
+            }
+        }
+
+        namespace expand {
+
+            static void visitor(Node& node, turn_actions::MakeMove&& checkers_actions) {
+                for(const auto& [checker_index, local_actions] : checkers_actions) {
+                    for(const auto checker_action : local_actions) {
+                        auto child_data = node.m_game_data;
+                        apply_move(child_data, checker_index, checker_action);
+                        node.m_children.emplace_back(&node, child_data);
+                    }
+                }
+            }
+
+            static void attack_add_children(
+                const AttackTree& tree,
+                Node& node,
+                std::vector<AttackAction>& chain
+            ) {
+                chain.emplace_back(tree.m_board_index);
+                if(tree.m_child_trees.empty()) {
+                    auto child_data = node.m_game_data;
+                    apply_attack(child_data, chain);
+                    node.m_children.emplace_back(&node, child_data);
+                    return;
+                }
+                for(const auto& child_tree : tree.m_child_trees) {
+                    attack_add_children(child_tree, node, chain);
+                }
+            }
+
+            static void visitor(Node& node, turn_actions::MakeAttack&& checkers_actions) {
+                auto chain = std::vector<AttackAction>{};
+                chain.reserve(checkers_actions.front().second.depth + 1);
+
+                for(const auto& [checker_index, local_actions] : checkers_actions) {
+                    chain.emplace_back(convert_checker_index_to_board_index(checker_index));
+                    for(const auto& tree : local_actions.actions) {
+                        attack_add_children(tree, node, chain);
+                    }
+                    chain.pop_back();
+                }
+            }
+            static void visitor(Node&, turn_actions::DeclareDraw) {}
+            static void visitor(Node&, turn_actions::DeclareLoss) {}
+
+            static void execute(Node& node) {
+                std::visit([&node](auto&& checkers_actions) {
+                    visitor(node, utils::checked_move(checkers_actions));
+                }, turn_actions::determine(node.m_game_data));
+            }
+
+        }
+
         StrategyResult calculate_move(const GameData& game_data) {
-            auto node = Node{0, 0, nullptr, game_data};
+            auto node = Node{nullptr, game_data};
+            auto generator = std::default_random_engine(std::chrono::system_clock::now().time_since_epoch().count());
 
             if(node.m_children.empty()) {
                 if(node.m_visits == 0) {
-                    rollout(node);
-                    back_propagate(node);
+                    rollout_back_propagate(node, generator);
                 } else {
-                    std::visit(utils::overloaded{
-                       [&game_data](const selection_confirmed::Move& action) {
-                           apply_move(game_data, action.checker_index, action.data);
-                           return true;
-                       },
-                       [&game_data](const selection_confirmed::Attack& action) {
-                           apply_attack(game_data, action.data);
-                           return true;
-                       },
-                       [](auto&&) {}
-                   }, random::calculate_move(game_data));
+                    expand::execute(node);
+                    if(node.m_children.empty()) {
+                        back_propagate_terminal(node);
+                    } else {
+                        rollout_back_propagate(node, generator);
+                    }
                 }
             } else {
 
