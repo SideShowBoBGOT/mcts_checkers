@@ -37,4 +37,8 @@ namespace mcts_checkers {
         std::vector<AttackTree> actions{};
         uint64_t depth{};
     };
+    enum class PlayerIndex {
+        FIRST,
+        SECOND
+    };
 }

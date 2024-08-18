@@ -1,5 +1,6 @@
 #pragma once
 #include <mcts_checkers/checkers_types.hpp>
+#include <strong_type/ordered.hpp>
 
 namespace mcts_checkers {
 
@@ -10,23 +11,18 @@ namespace mcts_checkers {
         CheckersBitset m_is_king;
     };
 
-    enum class PlayerIndex {
-        FIRST,
-        SECOND
-    };
-
-    // constexpr operator bool(const PlayerIndex index) {
-        // return index == PlayerIndex::SECOND;
-    // }
-
     constexpr PlayerIndex opposite_player(const PlayerIndex index) {
         return index == PlayerIndex::FIRST ? PlayerIndex::SECOND : PlayerIndex::FIRST;
     }
+
+    using UninterruptedMovesCount = strong::type<uint8_t, struct MovesCount_, strong::ordered, strong::incrementable>;
+    constexpr auto MAX_MOVES_COUNT = UninterruptedMovesCount{40};
 
     struct GameData {
         GameData()=default;
         CheckersData checkers;
         PlayerIndex m_current_player_index = PlayerIndex::FIRST;
+        UninterruptedMovesCount m_moves_count = UninterruptedMovesCount{0};
     };
 
 }

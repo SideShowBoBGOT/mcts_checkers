@@ -24,6 +24,7 @@ namespace mcts_checkers {
 
         game_data.checkers.m_player_index[move_action_index] = game_data.checkers.m_player_index[checker_index];
         game_data.m_current_player_index = opposite_player(game_data.m_current_player_index);
+        ++game_data.m_moves_count;
     }
 
     struct VectorInt8 {
@@ -110,6 +111,7 @@ namespace mcts_checkers {
         game_data.checkers.m_is_king[back_checker_index] = is_king_pos ? true : game_data.checkers.m_is_king[back_checker_index];
 
         game_data.m_current_player_index = opposite_player(game_data.m_current_player_index);
+        game_data.m_moves_count = UninterruptedMovesCount{0};
     }
 
 }

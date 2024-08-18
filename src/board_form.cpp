@@ -22,7 +22,8 @@ namespace mcts_checkers::board {
         PlayerMadeNoSelection,
         selection_confirmed::Move,
         selection_confirmed::Attack,
-        available_actions::None
+        turn_actions::DeclareLoss,
+        turn_actions::DeclareDraw
     >;
 
     static bool is_current_player_checker(const GameData& game_data, const CheckerIndex checker_index) {
@@ -40,10 +41,14 @@ namespace mcts_checkers::board {
         }
     }
 
-    namespace available_actions {
+    namespace turn_actions {
 
-        static Type calc(const GameData& game_data) {
-            auto attacks = Attack{};
+        static Type determine(const GameData& game_data) {
+            if(game_data.m_moves_count >= MAX_MOVES_COUNT) {
+                return DeclareDraw{};
+            }
+
+            auto attacks = MakeAttack{};
             iterate_over_current_player_checkers(game_data,
                 [&attacks](const GameData& game_data, const CheckerIndex checker_index) {
                     auto collected = collect_attacks(game_data.checkers, checker_index);
@@ -63,7 +68,7 @@ namespace mcts_checkers::board {
                 ), std::end(attacks));
                 return attacks;
             }
-            auto moves = Move{};
+            auto moves = MakeMove{};
             iterate_over_current_player_checkers(game_data,
                 [&moves](const GameData& game_data, const CheckerIndex checker_index) {
                     auto collected_moves = collect_moves(game_data.checkers, checker_index);
@@ -75,7 +80,7 @@ namespace mcts_checkers::board {
             if(not moves.empty()) {
                 return moves;
             }
-            return None{};
+            return DeclareLoss{};
         }
 
     }
@@ -400,22 +405,26 @@ namespace mcts_checkers::board::human {
         using IterationResult = std::variant<
             unselected::MoveForm,
             unselected::AttackForm,
-            available_actions::None
+            turn_actions::DeclareLoss,
+            turn_actions::DeclareDraw
         >;
     }
 
     initial::IterationResult iter(const initial::State, const GameData& game_data) {
         return std::visit(utils::overloaded{
-            [](available_actions::Move&& actions) -> initial::IterationResult {
+            [](turn_actions::MakeMove&& actions) -> initial::IterationResult {
                 return unselected::MoveForm{utils::checked_move(actions)};
             },
-            [](available_actions::Attack&& actions) -> initial::IterationResult {
+            [](turn_actions::MakeAttack&& actions) -> initial::IterationResult {
                 return unselected::AttackForm{utils::checked_move(actions)};
             },
-            [](available_actions::None actions) -> initial::IterationResult {
+            [](turn_actions::DeclareLoss actions) -> initial::IterationResult {
+                return actions;
+            },
+            [](turn_actions::DeclareDraw actions) -> initial::IterationResult {
                 return actions;
             }
-        }, available_actions::calc(game_data));
+        }, turn_actions::determine(game_data));
     }
 
     IterationResult iter(Form& form, const GameData& game_data) {
@@ -425,9 +434,11 @@ namespace mcts_checkers::board::human {
             unselected::AttackForm,
             selected::MoveForm,
             selected::attack::Form,
+
             selection_confirmed::Move,
             selection_confirmed::Attack,
-            available_actions::None
+            turn_actions::DeclareLoss,
+            turn_actions::DeclareDraw
         >;
 
         auto new_state = std::visit(
@@ -447,7 +458,11 @@ namespace mcts_checkers::board::human {
                 form.value_of() = initial::State{};
                 return utils::checked_move(action);
             },
-            [&form](const available_actions::None action) -> IterationResult {
+            [&form](const turn_actions::DeclareLoss action) -> IterationResult {
+                form.value_of() = initial::State{};
+                return action;
+            },
+            [&form](const turn_actions::DeclareDraw action) -> IterationResult {
                 form.value_of() = initial::State{};
                 return action;
             },
@@ -486,16 +501,19 @@ namespace mcts_checkers::board::ai {
         StrategyResult calculate_move(const GameData& game_data) {
             auto generator = std::default_random_engine(std::chrono::system_clock::now().time_since_epoch().count());
             return std::visit(utils::overloaded{
-                [](const available_actions::None actions) -> StrategyResult {
-                    return actions;
+                [](const turn_actions::DeclareLoss action) -> StrategyResult {
+                    return action;
                 },
-                [&generator](available_actions::Move&& actions) -> StrategyResult {
-                    const auto& checker_actions = get_random_element(actions, generator);
-                    const auto& action = get_random_element(checker_actions.second, generator);
-                    return selection_confirmed::Move{action, checker_actions.first};
+                [](const turn_actions::DeclareDraw action) -> StrategyResult {
+                    return action;
                 },
-                [&generator](available_actions::Attack&& actions) -> StrategyResult {
-                    const auto& checker_actions = get_random_element(actions, generator);
+                [&generator](turn_actions::MakeMove&& action) -> StrategyResult {
+                    const auto& checker_actions = get_random_element(action, generator);
+                    const auto& specific_move = get_random_element(checker_actions.second, generator);
+                    return selection_confirmed::Move{specific_move, checker_actions.first};
+                },
+                [&generator](turn_actions::MakeAttack&& action) -> StrategyResult {
+                    const auto& checker_actions = get_random_element(action, generator);
 
                     auto chain = std::vector<AttackAction>{};
                     chain.reserve(checker_actions.second.depth + 1);
@@ -506,7 +524,7 @@ namespace mcts_checkers::board::ai {
 
                     return selection_confirmed::Attack{utils::checked_move(chain)};
                 }
-            }, available_actions::calc(game_data));
+            }, turn_actions::determine(game_data));
         }
     }
 
@@ -520,7 +538,10 @@ namespace mcts_checkers::board::ai {
     } {}
 
     IterationResult iter(Form& form, const GameData&) {
-        if(form.m_task.wait_for(std::chrono::system_clock::duration::min()) == std::future_status::ready) {
+        if(
+            form.m_task.valid()
+            and form.m_task.wait_for(std::chrono::system_clock::duration::min()) == std::future_status::ready
+        ) {
             return utils::variant_move<IterationResult>(form.m_task.get());
         }
         return PlayerMadeNoSelection{};
@@ -547,7 +568,7 @@ namespace mcts_checkers::board {
     Form::Form()
         : m_state{STATE_FACTORIES[static_cast<uint8_t>(m_game_data.m_current_player_index)](m_game_data)} {}
 
-    void iter_out(Form& form) {
+    OutMessage iter_out(Form& form) {
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
         ImGui::BeginChild("BoardForm", ImVec2(0, -1), true, ImGuiWindowFlags_NoScrollWithMouse);
         ON_SCOPE_EXIT {
@@ -565,18 +586,25 @@ namespace mcts_checkers::board {
             }, form.m_state
         );
 
-        std::visit(utils::overloaded{
-            [](const PlayerMadeNoSelection) {},
-            [](const available_actions::None) {
-                std::exit(1);
+        return std::visit(utils::overloaded{
+            [&game_data=std::as_const(form.m_game_data)](const PlayerMadeNoSelection) -> OutMessage {
+                return MakingDecision{game_data.m_current_player_index};
             },
-            [&form](const selection_confirmed::Move& action) {
+            [&game_data=std::as_const(form.m_game_data)](const turn_actions::DeclareLoss) -> OutMessage {
+                return DeclareWin{game_data.m_current_player_index};
+            },
+            [&game_data=std::as_const(form.m_game_data)](const turn_actions::DeclareDraw) -> OutMessage {
+                return DeclareDraw{};
+            },
+            [&form](const selection_confirmed::Move& action) -> OutMessage {
                 apply_move(form.m_game_data, action.checker_index, action.data);
                 form.m_state = STATE_FACTORIES[static_cast<uint8_t>(form.m_game_data.m_current_player_index)](form.m_game_data);
+                return MakingDecision{form.m_game_data.m_current_player_index};
             },
-            [&form](const selection_confirmed::Attack& action) {
+            [&form](const selection_confirmed::Attack& action) -> OutMessage {
                 apply_attack(form.m_game_data, action.data);
                 form.m_state = STATE_FACTORIES[static_cast<uint8_t>(form.m_game_data.m_current_player_index)](form.m_game_data);
+                return MakingDecision{form.m_game_data.m_current_player_index};
             }
         }, action);
     }

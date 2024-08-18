@@ -14,6 +14,8 @@ class MainForm {
         board::Form m_board_form;
         statistic::Form m_statistic_form;
         GameData m_data;
+
+        statistic::InputMessage m_statistic_input_message = statistic::ShowNothing{};
 };
 
 }

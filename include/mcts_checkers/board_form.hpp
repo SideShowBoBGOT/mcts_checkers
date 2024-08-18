@@ -20,11 +20,12 @@ namespace mcts_checkers::board {
             std::vector<AttackAction> data;
         };
     }
-    namespace available_actions {
-        using Attack = std::vector<std::pair<CheckerIndex, CollectAttacksResult>>;
-        using Move = std::vector<std::pair<CheckerIndex, std::vector<MoveAction>>>;
-        struct None {};
-        using Type = std::variant<None, Attack, Move>;
+    namespace turn_actions {
+        using MakeAttack = std::vector<std::pair<CheckerIndex, CollectAttacksResult>>;
+        using MakeMove = std::vector<std::pair<CheckerIndex, std::vector<MoveAction>>>;
+        struct DeclareLoss {};
+        struct DeclareDraw {};
+        using Type = std::variant<DeclareLoss, DeclareDraw, MakeAttack, MakeMove>;
     }
 }
 
@@ -33,11 +34,11 @@ namespace mcts_checkers::board::human {
 
     namespace unselected {
         struct AttackForm {
-            available_actions::Attack m_actions{};
+            turn_actions::MakeAttack m_actions{};
         };
 
         struct MoveForm {
-            available_actions::Move m_actions{};
+            turn_actions::MakeMove m_actions{};
         };
     }
 
@@ -87,7 +88,8 @@ namespace mcts_checkers::board::ai {
     using StrategyResult = std::variant<
         selection_confirmed::Move,
         selection_confirmed::Attack,
-        available_actions::None
+        turn_actions::DeclareLoss,
+        turn_actions::DeclareDraw
     >;
 
     struct Form {
@@ -109,5 +111,15 @@ namespace mcts_checkers::board {
         State m_state;
     };
 
-    void iter_out(Form& form);
+    struct DeclareWin { PlayerIndex m_player_index; };
+    struct DeclareDraw {};
+    struct MakingDecision { PlayerIndex m_player_index; };
+
+    using OutMessage = std::variant<
+        DeclareWin,
+        DeclareDraw,
+        MakingDecision
+    >;
+
+    OutMessage iter_out(Form& form);
 }
