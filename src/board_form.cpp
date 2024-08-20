@@ -657,9 +657,33 @@ namespace mcts_checkers::board::ai {
 
         }
 
-        StrategyResult calculate_move(const GameData& game_data) {
-            auto node = Node{nullptr, game_data};
-            auto generator = std::default_random_engine(std::chrono::system_clock::now().time_since_epoch().count());
+        static constexpr double calc_ucb1(
+            const uint64_t parent_visits,
+            const uint64_t node_visits,
+            const int64_t node_value
+        ) {
+            const auto frac = static_cast<double>(parent_visits) / static_cast<double>(node_visits);
+            const auto res = static_cast<double>(node_value) + 2 * std::sqrt(std::log(frac));
+            return res;
+        }
+
+
+        std::vector<Node>::iterator get_max_score_child(Node& node) {
+            return std::max_element(std::begin(node.m_children), std::end(node.m_children),
+                [parent_visits=node.m_visits](const Node& lhs, const Node& rhs) {
+                    if(lhs.m_visits == 0) return true;
+                    if(rhs.m_visits == 0) return false;
+                    const auto lhs_usb = calc_ucb1(parent_visits, lhs.m_visits, lhs.m_value);
+                    const auto rhs_usb = calc_ucb1(parent_visits, rhs.m_visits, rhs.m_value);
+                    return lhs_usb > rhs_usb;
+                }
+            );
+        }
+
+        void select(
+            Node& node,
+            std::default_random_engine& generator
+        ) {
 
             if(node.m_children.empty()) {
                 if(node.m_visits == 0) {
@@ -673,8 +697,26 @@ namespace mcts_checkers::board::ai {
                     }
                 }
             } else {
-
+                select(*get_max_score_child(node), generator);
             }
+        }
+
+        StrategyResult calculate_move(const GameData& game_data) {
+            auto root = Node{nullptr, game_data};
+            {
+                auto generator = std::default_random_engine(std::chrono::system_clock::now().time_since_epoch().count());
+                using namespace std::chrono_literals;
+                const auto start = std::chrono::high_resolution_clock::now();
+                while(std::chrono::high_resolution_clock::now() - start < 2s) {
+                    select(root, generator);
+                }
+            }
+            if(root.m_children.empty()) {
+                return turn_actions::DeclareLoss{game_data.m_current_player_index};
+            }
+            std::distance(std::begin(root.m_children), get_max_score_child(root));
+
+
         }
     }
 
