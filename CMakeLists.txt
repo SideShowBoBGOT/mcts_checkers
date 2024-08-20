@@ -9,25 +9,25 @@ find_package(Boost REQUIRED COMPONENTS system)
 find_package(fmt REQUIRED)
 
 add_library(mcts_checkers
-        include/mcts_checkers/utils.hpp
-        include/mcts_checkers/main_form.hpp
-        src/main_form.cpp
-        include/mcts_checkers/board_form.hpp
-        include/mcts_checkers/statistic_form.hpp
-        src/board_form.cpp
-        src/statistic_form.cpp
-        include/mcts_checkers/checkers_data.hpp
-        src/checkers_data.cpp
-        include/mcts_checkers/mcts.hpp
-        src/mcts.cpp
-        include/mcts_checkers/checkers_types.hpp
-        include/mcts_checkers/action_collection_funcs.hpp
-        src/action_collection_funcs.cpp
-        include/mcts_checkers/action_application_funcs.hpp
-        src/action_application_funcs.cpp
-        include/mcts_checkers/index_converters.hpp
+        src/mcts_checkers/utils.hpp
+        src/mcts_checkers/main_form.hpp
+        src/mcts_checkers/main_form.cpp
+        src/mcts_checkers/board_form.hpp
+        src/mcts_checkers/statistic_form.hpp
+        src/mcts_checkers/board_form.cpp
+        src/mcts_checkers/statistic_form.cpp
+        src/mcts_checkers/checkers_data.hpp
+        src/mcts_checkers/checkers_data.cpp
+        src/mcts_checkers/mcts.hpp
+        src/mcts_checkers/mcts.cpp
+        src/mcts_checkers/checkers_types.hpp
+        src/mcts_checkers/action_collection_funcs.hpp
+        src/mcts_checkers/action_collection_funcs.cpp
+        src/mcts_checkers/action_application_funcs.hpp
+        src/mcts_checkers/action_application_funcs.cpp
+        src/mcts_checkers/index_converters.hpp
 )
-target_include_directories(mcts_checkers PUBLIC include)
+target_include_directories(mcts_checkers PUBLIC src)
 target_link_libraries(mcts_checkers
         PUBLIC
         ImGui-SFML::ImGui-SFML
