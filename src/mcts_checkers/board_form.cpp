@@ -26,117 +26,11 @@ namespace mcts_checkers::board {
         turn_actions::DeclareDraw
     >;
 
-    static bool is_current_player_checker(const GameData& game_data, const CheckerIndex checker_index) {
-        return game_data.checkers.m_is_in_place[checker_index]
-            and game_data.checkers.m_player_index[checker_index] == static_cast<bool>(game_data.m_current_player_index);
-    }
-
-    template<typename Callable>
-    static void iterate_over_current_player_checkers(const GameData& game_data, Callable&& callable) {
-        for(uint8_t i = 0; i < CHEKCERS_CELLS_COUNT; ++i) {
-            const auto checker_index = CheckerIndex{i};
-            if(is_current_player_checker(game_data, checker_index)) {
-                callable(game_data, checker_index);
-            }
-        }
-    }
-
-    namespace turn_actions {
-
-        static Type determine(const GameData& game_data) {
-            if(game_data.m_moves_count >= MAX_MOVES_COUNT) {
-                return DeclareDraw{};
-            }
-
-            auto attacks = MakeAttack{};
-            iterate_over_current_player_checkers(game_data,
-                [&attacks](const GameData& game_data, const CheckerIndex checker_index) {
-                    auto collected = collect_attacks(game_data.checkers, checker_index);
-                    if(not collected.actions.empty()) {
-                        attacks.emplace_back(checker_index, collected);
-                    }
-                }
-            );
-            if(not attacks.empty()) {
-                const auto max_depth = std::max_element(std::begin(attacks), std::end(attacks),
-                    [](const auto& first, const auto& second) {
-                        return first.second.depth < second.second.depth;
-                    }
-                )->second.depth;
-                attacks.erase(std::remove_if(std::begin(attacks), std::end(attacks),
-                    [max_depth](const auto& el) { return el.second.depth < max_depth; }
-                ), std::end(attacks));
-                return attacks;
-            }
-            auto moves = MakeMove{};
-            iterate_over_current_player_checkers(game_data,
-                [&moves](const GameData& game_data, const CheckerIndex checker_index) {
-                    auto collected_moves = collect_moves(game_data.checkers, checker_index);
-                    if(not collected_moves.empty()) {
-                        moves.emplace_back(checker_index, utils::checked_move(collected_moves));
-                    }
-                }
-            );
-            if(not moves.empty()) {
-                return moves;
-            }
-            return DeclareLoss{game_data.m_current_player_index};
-        }
-
-    }
+    
+        
 }
 
 namespace mcts_checkers::board::human {
-
-    static consteval ImVec4 normalize_rgba_color(const ImVec4 vec) {
-        return {vec.x / 255, vec.y / 255, vec.z / 255, vec.w / 255};
-    }
-
-    static const auto BLACK_COLOR = ImGui::ColorConvertFloat4ToU32(ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
-    static const auto WHITE_COLOR = ImGui::ColorConvertFloat4ToU32(ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
-    static const auto GREY_COLOR = ImGui::ColorConvertFloat4ToU32(ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
-
-    static const auto BLUE_COLOR = ImGui::ColorConvertFloat4ToU32(ImVec4(0.0f, 0.0f, 1.0f, 1.0f));
-    static const auto PURPLE_BLUE_COLOR = ImGui::ColorConvertFloat4ToU32(ImVec4(normalize_rgba_color({102.0f, 178.f, 255.0f, 255.0f})));
-    static const auto RED_COLOR = ImGui::ColorConvertFloat4ToU32(ImVec4(1.0f, 0.0f, 0.0f, 1.0f));
-    static const auto PINK_COLOR = ImGui::ColorConvertFloat4ToU32(ImVec4(normalize_rgba_color({255.0f, 0.f, 127.0f, 255.0f})));
-
-    static const auto PURPLE_COLOR = ImGui::ColorConvertFloat4ToU32(normalize_rgba_color({153.0f, 51.f, 255.0f, 255.0f}));
-
-    static const auto YELLOW_COLOR = ImGui::ColorConvertFloat4ToU32(ImVec4(1.0f, 1.0f, 0.0f, 1.0f));
-    static const auto GREEN_COLOR = ImGui::ColorConvertFloat4ToU32(ImVec4(0.0f, 153.f / 255, 0.0f, 1.0f));
-
-    static const auto BOARD_CELL_ONE_COLOR = ImGui::ColorConvertFloat4ToU32(normalize_rgba_color({217.0f, 182.f, 140.0f, 255.0f}));
-    static const auto BOARD_CELL_TWO_COLOR = ImGui::ColorConvertFloat4ToU32(normalize_rgba_color({188.0f, 117.f, 65.0f, 255.0f}));
-    static const auto PLAYER_ONE_PAWN_COLOR = WHITE_COLOR;
-    static const auto PLAYER_TWO_PAWN_COLOR = BLACK_COLOR;
-    static const auto KING_HAT_COLOR = GREY_COLOR;
-
-    static ImVec2 calc_cell_size() {
-        return ImGui::GetWindowSize() / CELLS_PER_SIDE;
-    }
-
-    static ImVec2 calc_mouse_local_window_pos() {
-        return ImGui::GetMousePos() - ImGui::GetCursorScreenPos();
-    }
-
-    static constexpr ImVec2 convert_board_vector_to_imvec(const BoardVector board_index) {
-        return ImVec2{
-            static_cast<float>(board_index.x),
-            static_cast<float>(board_index.y)
-        };
-    }
-
-    static constexpr BoardVector convert_imvec_to_board_vector(const ImVec2 imvec) {
-        return BoardVector{
-            static_cast<uint8_t>(imvec.x),
-            static_cast<uint8_t>(imvec.y)
-        };
-    }
-
-    static ImVec2 calc_cell_top_left(const BoardVector board_index) {
-        return calc_cell_size() * convert_board_vector_to_imvec(board_index) + ImGui::GetCursorScreenPos();
-    }
 
     static constexpr uint8_t convert_board_index(const ImVec2ih board_index) {
         return board_index.y * CELLS_PER_SIDE + board_index.x;
@@ -364,42 +258,7 @@ namespace mcts_checkers::board::human {
         return StateNotChange{};
     }
 
-    void draw_rects() {
-        const auto draw_list = ImGui::GetWindowDrawList();
-        const auto cell_size = calc_cell_size();
-        auto is_white = true;
-        for(uint8_t y = 0; y < CELLS_PER_SIDE; ++y) {
-            for(uint8_t x = 0; x < CELLS_PER_SIDE; ++x) {
-                const auto p_min = calc_cell_top_left(BoardVector{x, y});
-                draw_list->AddRectFilled(
-                    p_min, p_min + cell_size, is_white ? BOARD_CELL_ONE_COLOR : BOARD_CELL_TWO_COLOR
-                );
-                is_white = not is_white;
-            }
-            is_white = not is_white;
-        }
-    }
-
-    void draw_checkers(const GameData& data) {
-        const auto draw_list = ImGui::GetWindowDrawList();
-        const auto cell_size = calc_cell_size();
-        const auto half_cell_size = cell_size / 2;
-        constexpr auto radius_modifier = 0.8f;
-        const auto pawn_radius = half_cell_size * radius_modifier;
-        const auto king_hat_radius = half_cell_size / 2;
-        auto checker_index = CheckerIndex{0};
-        for(uint8_t y = 0; y < CELLS_PER_SIDE; ++y) {
-            for(uint8_t x = y % 2 == 0 ? 1 : 0; x < CELLS_PER_SIDE; x += 2, ++checker_index) {
-                if(not data.checkers.m_is_in_place[checker_index]) continue;
-                const auto center = calc_cell_top_left(BoardVector{x, y}) + half_cell_size;
-                const auto player_index = data.checkers.m_player_index[checker_index];
-                draw_list->AddEllipseFilled(center, pawn_radius, player_index ? PLAYER_ONE_PAWN_COLOR : PLAYER_TWO_PAWN_COLOR);
-                if(data.checkers.m_is_king[checker_index]) {
-                    draw_list->AddEllipseFilled(center, king_hat_radius, KING_HAT_COLOR);
-                }
-            }
-        }
-    }
+    
 
     namespace initial {
         using IterationResult = std::variant<
@@ -751,11 +610,7 @@ namespace mcts_checkers::board {
         return ai::iter(form, game_data);
     }
 
-    static constexpr std::array<State(*)(const GameData&), 2> STATE_FACTORIES = {
-        [](const GameData&) -> State { return human::Form{}; },
-        // [](const GameData&) -> State { return human::Form{}; },
-        [](const GameData& game_data) -> State { return ai::Form{game_data}; }
-    };
+    
 
     Form::Form()
         : m_state{STATE_FACTORIES[static_cast<uint8_t>(m_game_data.m_current_player_index)](m_game_data)} {}

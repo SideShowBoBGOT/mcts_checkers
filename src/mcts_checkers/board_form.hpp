@@ -20,13 +20,6 @@ namespace mcts_checkers::board {
             std::vector<AttackAction> data;
         };
     }
-    namespace turn_actions {
-        using MakeAttack = std::vector<std::pair<CheckerIndex, CollectAttacksResult>>;
-        using MakeMove = std::vector<std::pair<CheckerIndex, std::vector<MoveAction>>>;
-        struct DeclareLoss { PlayerIndex m_player_index; };
-        struct DeclareDraw {};
-        using Type = std::variant<DeclareLoss, DeclareDraw, MakeAttack, MakeMove>;
-    }
 }
 
 

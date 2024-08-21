@@ -1,7 +1,7 @@
 #include <mcts_checkers/statistic_form.hpp>
-#include <imgui.h>
-
 #include <mcts_checkers/utils.hpp>
+
+
 #include <fmt/format.h>
 
 namespace mcts_checkers::statistic {

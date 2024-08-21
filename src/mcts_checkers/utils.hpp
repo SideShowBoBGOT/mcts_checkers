@@ -1,5 +1,7 @@
 #pragma once
 #define IMGUI_DEFINE_MATH_OPERATORS
+#include <imgui.h>
+#include <imgui_internal.h>
 #include <variant>
 
 #define ON_SCOPE_EXIT_CAT2(x, y) x##y

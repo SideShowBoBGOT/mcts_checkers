@@ -1,5 +1,5 @@
 #pragma once
-#include <mcts_checkers/board_form.hpp>
+#include <mcts_checkers/board/form.hpp>
 #include <mcts_checkers/statistic_form.hpp>
 #include <mcts_checkers/checkers_data.hpp>
 

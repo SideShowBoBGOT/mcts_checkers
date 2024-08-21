@@ -1,22 +1,21 @@
 #include <mcts_checkers/main_form.hpp>
 #include <mcts_checkers/utils.hpp>
-#include <imgui.h>
 
 namespace mcts_checkers {
 
     MainForm::MainForm()=default;
 
     static constexpr auto convert_board_output_message_to_statistic_input_message(
-        const board::OutMessage out_message
+        const board::OutMessage::Type& out_message
     ) -> statistic::InputMessage {
         return std::visit(utils::overloaded{
-            [](const board::DeclareDraw) -> statistic::InputMessage {
+            [](const board::OutMessage::DeclareDraw) -> statistic::InputMessage {
                 return statistic::ShowDraw{};
             },
-            [](const board::DeclareWin message) -> statistic::InputMessage {
+            [](const board::OutMessage::DeclareWin message) -> statistic::InputMessage {
                 return statistic::ShowWin{message.m_player_index};
             },
-            [](const board::MakingDecision message) -> statistic::InputMessage {
+            [](const board::OutMessage::MakingDecision message) -> statistic::InputMessage {
                 return statistic::ShowMakingDecision{message.m_player_index};
             }
         }, out_message);
