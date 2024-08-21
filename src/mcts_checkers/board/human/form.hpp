@@ -49,6 +49,8 @@ namespace mcts_checkers::board::human {
         initial::Form,
         unselected::move::Form,
         unselected::attack::Form,
+        selected::move::Form,
+        selected::attack::Form,
     >;
 
     struct Form {
@@ -56,9 +58,16 @@ namespace mcts_checkers::board::human {
     };
 
     namespace OutMessage {
-
-        
-
+        struct PlayerMadeNoSelection {};
+        struct PlayerMadeSelection { GameData m_game_data; };
+        struct DeclareLoss { PlayerIndex m_index; };
+        struct DeclareDraw {};
+        using Type = std::variant<
+            PlayerMadeNoSelection,
+            PlayerMadeSelection,
+            DeclareLoss,
+            DeclareDraw
+        >;
     }
 
     OutMessage::Type iter(Form& form, const GameData& game_data);

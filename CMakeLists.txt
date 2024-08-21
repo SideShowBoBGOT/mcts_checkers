@@ -30,18 +30,8 @@ add_library(mcts_checkers
         src/mcts_checkers/board/form.hpp
         src/mcts_checkers/board/form.cpp
 
-
         src/mcts_checkers/board/human/form.hpp
         src/mcts_checkers/board/human/form.cpp
-        src/mcts_checkers/board/human/initial.hpp
-        src/mcts_checkers/board/human/selected/attack.hpp
-        src/mcts_checkers/board/human/selected/attack.cpp
-        src/mcts_checkers/board/human/selected/move.hpp
-        src/mcts_checkers/board/human/selected/move.cpp
-        src/mcts_checkers/board/human/unselected/attack.hpp
-        src/mcts_checkers/board/human/unselected/attack.cpp
-        src/mcts_checkers/board/human/unselected/move.hpp
-        src/mcts_checkers/board/human/unselected/move.cpp
         src/mcts_checkers/board/ai/form.hpp
         src/mcts_checkers/board/ai/form.cpp
 )
