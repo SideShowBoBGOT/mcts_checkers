@@ -19,8 +19,8 @@ namespace mcts_checkers::board {
     };
 
     namespace OutMessage {
-        struct DeclareWin { PlayerIndex m_player_index; };
         struct DeclareDraw {};
+        struct DeclareWin { PlayerIndex m_player_index; };
         struct MakingDecision { PlayerIndex m_player_index; };
 
         using Type = std::variant<DeclareDraw, DeclareWin, MakingDecision>;

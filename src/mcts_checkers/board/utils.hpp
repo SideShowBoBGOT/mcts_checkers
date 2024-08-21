@@ -2,7 +2,6 @@
 
 #include <mcts_checkers/checkers_data.hpp>
 #include <mcts_checkers/utils.hpp>
-#include <variant>
 
 namespace mcts_checkers {
 
@@ -38,4 +37,18 @@ namespace mcts_checkers {
     const auto PLAYER_ONE_PAWN_COLOR = WHITE_COLOR;
     const auto PLAYER_TWO_PAWN_COLOR = BLACK_COLOR;
     const auto KING_HAT_COLOR = GREY_COLOR;
+
+
+    namespace PlayerMessage {
+        struct PlayerMadeNoSelection {};
+        struct PlayerMadeSelection { GameData m_game_data; };
+        struct DeclareLoss { PlayerIndex m_index; };
+        struct DeclareDraw {};
+        using Type = std::variant<
+            PlayerMadeNoSelection,
+            PlayerMadeSelection,
+            DeclareLoss,
+            DeclareDraw
+        >;
+    }
 }

@@ -3,12 +3,7 @@
 
 namespace mcts_checkers::board {
 
-
     namespace {
-        
-        // ImVec2 calc_mouse_local_window_pos() {
-        //     return ImGui::GetMousePos() - ImGui::GetCursorScreenPos();
-        // }
 
         constexpr ImVec2 convert_board_vector_to_imvec(const BoardVector board_index) {
             return ImVec2{
@@ -23,8 +18,6 @@ namespace mcts_checkers::board {
                 static_cast<uint8_t>(imvec.y)
             };
         }
-
-        
 
         void draw_rects() {
             const auto draw_list = ImGui::GetWindowDrawList();
@@ -65,14 +58,9 @@ namespace mcts_checkers::board {
         constexpr std::array<detail::State(*)(const GameData&), 2> STATE_FACTORIES = {
             [](const GameData&) -> detail::State { return human::Form{}; },
             // [](const GameData& game_data) -> detail::State { return ai::Form{game_data}; }
-            [](const GameData&) -> detail::State { return ai::Form{}; },
+            [](const GameData&) -> detail::State { return human::Form{}; },
         };
-
-
-        
     }
-    
-    
 
     Form::Form()
         : m_state{STATE_FACTORIES[static_cast<uint8_t>(m_game_data.m_current_player_index)](m_game_data)} {}
@@ -88,12 +76,34 @@ namespace mcts_checkers::board {
         draw_rects();
         draw_checkers(form.m_game_data);
 
-        // const auto action = std::visit(
-        //     [&game_data = std::as_const(form.m_game_data)]
-        //     (auto& state) -> IterationResult {
-        //         return board::iter(state, game_data);
-        //     }, form.m_state
-        // );
+        const auto player_message = std::visit(
+            [&game_data = std::as_const(form.m_game_data)]
+            (auto& state) -> PlayerMessage::Type {
+                return iter(state, game_data);
+            }, form.m_state
+        );
+
+        // struct PlayerMadeNoSelection {};
+        // struct PlayerMadeSelection { GameData m_game_data; };
+        // struct DeclareLoss { PlayerIndex m_index; };
+        // struct DeclareDraw {};
+
+        std::visit(utils::overloaded{
+            [](const PlayerMessage::PlayerMadeNoSelection message) -> OutMessage::Type {
+                return OutMessage::MakingDecision{};
+            },
+            [&form](const PlayerMessage::PlayerMadeSelection message) -> OutMessage::Type {
+                form.m_game_data = message.m_game_data;
+                form.m_state = STATE_FACTORIES[static_cast<uint8_t>(form.m_game_data.m_current_player_index)](form.m_game_data);
+                return OutMessage::MakingDecision{};
+            },
+            [](const PlayerMessage::DeclareLoss message) -> OutMessage::Type {
+                return OutMessage::DeclareWin{opposite_player(message.m_index)};
+            },
+            [](const PlayerMessage::DeclareDraw) -> OutMessage::Type {
+                return OutMessage::DeclareDraw{};
+            }
+        }, player_message);
 
         // return std::visit(utils::overloaded{
         //     [&game_data=std::as_const(form.m_game_data)](const PlayerMadeNoSelection) -> OutMessage {

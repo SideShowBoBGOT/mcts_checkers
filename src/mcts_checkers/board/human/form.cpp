@@ -8,6 +8,8 @@
 #include <range/v3/view/transform.hpp>
 #include <range/v3/range/conversion.hpp>
 
+#include <tl/optional.hpp>
+
 namespace mcts_checkers::board::human {
 
     namespace initial {
@@ -37,7 +39,7 @@ namespace mcts_checkers::board::human {
                     [](const turn_actions::DeclareLoss actions) -> OutMessage::Type {
                         return OutMessage::DeclareLoss{actions.m_player_index};
                     },
-                    [](const turn_actions::DeclareDraw actions) -> OutMessage::Type {
+                    [](const turn_actions::DeclareDraw) -> OutMessage::Type {
                         return OutMessage::DeclareDraw{};
                     }
                 }, turn_actions::determine(game_data));
@@ -66,9 +68,26 @@ namespace mcts_checkers::board::human {
             draw_hovered_cell(convert_checker_index_to_board_vector(checker_index), color);
         }
 
+        constexpr BoardVector convert_imvec_to_board_vector(const ImVec2 imvec) {
+            return BoardVector{
+                static_cast<uint8_t>(imvec.x),
+                static_cast<uint8_t>(imvec.y)
+            };
+        }
 
         BoardVector calc_hovered_cell() {
             return convert_imvec_to_board_vector(calc_mouse_local_window_pos() / calc_cell_size());
+        }
+
+        constexpr bool is_white_cell(const BoardVector cell_index) {
+            return is_even(cell_index.y) == is_even(cell_index.x);
+        }
+
+        constexpr tl::optional<CheckerIndex> try_convert_board_vector_to_checker_index(const BoardVector cell_index) {
+            if(is_white_cell(cell_index)) {
+                return tl::nullopt;
+            }
+            return convert_board_vector_to_checker_index(cell_index);
         }
 
         namespace unselected_selected_common {
@@ -121,7 +140,9 @@ namespace mcts_checkers::board::human {
                 OutMessage::Type iter(Form& form) {
                     unselected_selected_common::draw_action_cells(form.m_actions);
                     if(is_window_hovered()) {
-                        return unselected_selected_common::select_checker<OutMessage::Selected, OutMessage::NotSelected, Form>(form);
+                        return utils::variant_move<OutMessage::Type>(
+                            unselected_selected_common::select_checker<OutMessage::Selected, OutMessage::NotSelected, Form>(form)
+                        );
                     }
                     return OutMessage::NotSelected{};
                 }
@@ -144,7 +165,9 @@ namespace mcts_checkers::board::human {
                 OutMessage::Type iter(Form& form) {
                     unselected_selected_common::draw_action_cells(form.m_actions);
                     if(is_window_hovered()) {
-                        return unselected_selected_common::select_checker<OutMessage::Selected, OutMessage::NotSelected, Form>(form);
+                        return utils::variant_move<OutMessage::Type>(
+                            unselected_selected_common::select_checker<OutMessage::Selected, OutMessage::NotSelected, Form>(form)
+                        );
                     }
                     return OutMessage::NotSelected{};
                 }
@@ -317,77 +340,77 @@ namespace mcts_checkers::board::human {
         }
     }
 
-    OutMessage::Type iter(Form& form, const GameData& game_data) {
+    PlayerMessage::Type iter(Form& form, const GameData& game_data) {
         return std::visit(utils::overloaded{
             [&game_data, &form](const initial::Form) {
                 return std::visit(utils::overloaded{
-                    [&form](initial::OutMessage::TransitionToUnselectedMove&& message) -> OutMessage::Type {
+                    [&form](initial::OutMessage::TransitionToUnselectedMove&& message) -> PlayerMessage::Type {
                         form.m_state = unselected::move::Form{utils::checked_move(message.m_actions)};
-                        return OutMessage::PlayerMadeNoSelection{};
+                        return PlayerMessage::PlayerMadeNoSelection{};
                     },
-                    [&form](initial::OutMessage::TransitionToUnselectedAttack&& message) -> OutMessage::Type {
+                    [&form](initial::OutMessage::TransitionToUnselectedAttack&& message) -> PlayerMessage::Type {
                         form.m_state = unselected::attack::Form{utils::checked_move(message.m_actions)};
-                        return OutMessage::PlayerMadeNoSelection{};
+                        return PlayerMessage::PlayerMadeNoSelection{};
                     },
-                    [](const initial::OutMessage::DeclareLoss message) -> OutMessage::Type {
-                        return OutMessage::DeclareLoss{message.m_player_index};
+                    [](const initial::OutMessage::DeclareLoss message) -> PlayerMessage::Type {
+                        return PlayerMessage::DeclareLoss{message.m_player_index};
                     },
-                    [](const initial::OutMessage::DeclareDraw) -> OutMessage::Type {
-                        return OutMessage::DeclareDraw{};
+                    [](const initial::OutMessage::DeclareDraw) -> PlayerMessage::Type {
+                        return PlayerMessage::DeclareDraw{};
                     }
                 }, initial::iter(game_data));
             },
             [&form](unselected::move::Form& state) {
                 return std::visit(utils::overloaded{
-                    [](unselected::move::OutMessage::NotSelected) -> OutMessage::Type {
-                        return OutMessage::PlayerMadeNoSelection{};
+                    [](unselected::move::OutMessage::NotSelected) -> PlayerMessage::Type {
+                        return PlayerMessage::PlayerMadeNoSelection{};
                     },
-                    [&form](unselected::move::OutMessage::Selected&& message) -> OutMessage::Type {
+                    [&form](unselected::move::OutMessage::Selected&& message) -> PlayerMessage::Type {
                         form.m_state = selected::move::Form(message.m_index, utils::checked_move(message.m_actions));
-                        return OutMessage::PlayerMadeNoSelection{};
+                        return PlayerMessage::PlayerMadeNoSelection{};
                     }
                 }, unselected::move::iter(state));
             },
             [&form](unselected::attack::Form& state) {
                 return std::visit(utils::overloaded{
-                    [](unselected::attack::OutMessage::NotSelected) -> OutMessage::Type {
-                        return OutMessage::PlayerMadeNoSelection{};
+                    [](unselected::attack::OutMessage::NotSelected) -> PlayerMessage::Type {
+                        return PlayerMessage::PlayerMadeNoSelection{};
                     },
-                    [&form](unselected::attack::OutMessage::Selected&& message) -> OutMessage::Type {
+                    [&form](unselected::attack::OutMessage::Selected&& message) -> PlayerMessage::Type {
                         form.m_state = selected::attack::Form(message.m_index, utils::checked_move(message.m_actions));
-                        return OutMessage::PlayerMadeNoSelection{};
+                        return PlayerMessage::PlayerMadeNoSelection{};
                     }
                 }, unselected::attack::iter(state));
             },
             [&form, &game_data](selected::move::Form& state) {
                 return std::visit(utils::overloaded{
-                    [&game_data](selected::move::OutMessage::Selected&& message) -> OutMessage::Type {
+                    [&game_data](selected::move::OutMessage::Selected&& message) -> PlayerMessage::Type {
                         auto new_game_data = game_data;
                         apply_move(new_game_data, message.m_index, message.m_data);
-                        return OutMessage::PlayerMadeSelection{new_game_data};
+                        return PlayerMessage::PlayerMadeSelection{new_game_data};
                     },
-                    [&form](selected::move::OutMessage::SelectedOtherChecker&& message) -> OutMessage::Type {
+                    [&form](selected::move::OutMessage::SelectedOtherChecker&& message) -> PlayerMessage::Type {
                         form.m_state = selected::move::Form(message.m_index, utils::checked_move(message.m_actions));
-                        return OutMessage::PlayerMadeNoSelection{};
+                        return PlayerMessage::PlayerMadeNoSelection{};
                     },
-                    [](const selected::move::OutMessage::StateNotChange) -> OutMessage::Type {
-                        return OutMessage::PlayerMadeNoSelection{};
+                    [](const selected::move::OutMessage::StateNotChange) -> PlayerMessage::Type {
+                        return PlayerMessage::PlayerMadeNoSelection{};
                     },
                 }, selected::move::iter(state));
             },
             [&form, &game_data](selected::attack::Form& state) {
                 return std::visit(utils::overloaded{
-                    [&game_data](selected::attack::OutMessage::Selected&& message) -> OutMessage::Type {
+                    [&game_data](selected::attack::OutMessage::Selected&& message) -> PlayerMessage::Type {
                         auto new_game_data = game_data;
                         apply_attack(new_game_data, message.m_data);
-                        return OutMessage::PlayerMadeSelection{new_game_data};
+                        return PlayerMessage::PlayerMadeSelection{new_game_data};
                     },
-                    [&form](selected::attack::OutMessage::SelectedOtherChecker&& message) -> OutMessage::Type {
+                    [&form](selected::attack::OutMessage::SelectedOtherChecker&& message) -> PlayerMessage::Type {
                         form.m_state = selected::attack::Form(message.m_index, utils::checked_move(message.m_actions));
-                        return OutMessage::PlayerMadeNoSelection{};
+                        return PlayerMessage::PlayerMadeNoSelection{};
                     },
-                    [](const selected::attack::OutMessage::StateNotChange) -> OutMessage::Type {
-                        return OutMessage::PlayerMadeNoSelection{};
+                    [](const selected::attack::OutMessage::StateNotChange) -> PlayerMessage::Type {
+                        return PlayerMessage::PlayerMadeNoSelection{};
                     },
                 }, selected::attack::iter(state));
             },

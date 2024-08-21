@@ -1,9 +1,7 @@
 #pragma once
 
-#include <variant>
 #include <span>
 #include <mcts_checkers/board/utils.hpp>
-
 
 namespace mcts_checkers::board::human {
 
@@ -50,27 +48,15 @@ namespace mcts_checkers::board::human {
         unselected::move::Form,
         unselected::attack::Form,
         selected::move::Form,
-        selected::attack::Form,
+        selected::attack::Form
     >;
 
     struct Form {
         State m_state{};
     };
 
-    namespace OutMessage {
-        struct PlayerMadeNoSelection {};
-        struct PlayerMadeSelection { GameData m_game_data; };
-        struct DeclareLoss { PlayerIndex m_index; };
-        struct DeclareDraw {};
-        using Type = std::variant<
-            PlayerMadeNoSelection,
-            PlayerMadeSelection,
-            DeclareLoss,
-            DeclareDraw
-        >;
-    }
 
-    OutMessage::Type iter(Form& form, const GameData& game_data);
+    PlayerMessage::Type iter(Form& form, const GameData& game_data);
 
     
 }

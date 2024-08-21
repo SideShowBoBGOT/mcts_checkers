@@ -5,6 +5,14 @@
 
 namespace mcts_checkers {
 
+    namespace {
+        ImVec2 convert_board_vector_to_imvec(const BoardVector board_vector) {
+            return {
+                static_cast<float>(board_vector.x),
+                static_cast<float>(board_vector.y)
+            };
+        }
+    }
 
     ImVec2 calc_cell_size() {
         return ImGui::GetWindowSize() / CELLS_PER_SIDE;
