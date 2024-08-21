@@ -60,12 +60,12 @@ namespace mcts_checkers::board::human {
     }
 
     namespace initial {
-        struct State {};
+        struct Form {};
     }
 
     using Form = strong::type<
         std::variant<
-            initial::State,
+            initial::Form,
             unselected::AttackForm,
             unselected::MoveForm,
             selected::MoveForm,

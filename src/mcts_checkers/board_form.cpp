@@ -64,41 +64,6 @@ namespace mcts_checkers::board::human {
 
     struct StateNotChange{};
 
-    static bool is_window_hovered() {
-        return ImGui::IsWindowHovered(ImGuiHoveredFlags_None);
-    }
-
-    namespace unselected_selected_common {
-
-        template<typename ActionsType>
-        static void draw_action_cells(const std::vector<std::pair<CheckerIndex, ActionsType>>& actions) {
-            for(const auto& el : actions) {
-                draw_hovered_cell(convert_checker_index_to_board_vector(el.first), PURPLE_BLUE_COLOR);
-            }
-        }
-
-        template<typename SelectedForm, typename Form>
-        static std::variant<StateNotChange, SelectedForm> select_checker(Form& form) {
-            assert(is_window_hovered() && "Window is not hovered");
-
-            const auto checker_board_vector = calc_hovered_cell();
-            if(const auto checker_index_opt = try_convert_board_vector_to_checker_index(checker_board_vector)) {
-                const auto checker_index = *checker_index_opt;
-                const auto it = std::find_if(std::begin(form.m_actions), std::end(form.m_actions),
-                    [checker_index](const auto& el) { return el.first == checker_index; });
-                if(it != std::end(form.m_actions)) {
-                    draw_hovered_cell(checker_board_vector, GREEN_COLOR);
-                    if(ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
-                        return SelectedForm(checker_index, utils::checked_move(form.m_actions));
-                    }
-                    return StateNotChange{};
-                }
-            }
-            draw_hovered_cell(checker_board_vector, YELLOW_COLOR);
-            return StateNotChange{};
-        }
-    }
-
     namespace unselected {
 
         using Form = std::variant<MoveForm, AttackForm>;
@@ -128,29 +93,11 @@ namespace mcts_checkers::board::human {
 
     namespace selected {
 
-        template<typename ActionsType>
-        static auto find_checker_actions(
-            const CheckerIndex checker_index,
-            const std::vector<std::pair<CheckerIndex, ActionsType>>& actions
-        ) -> typename std::vector<std::pair<CheckerIndex, ActionsType>>::const_iterator {
-            const auto it = std::find_if(std::begin(actions), std::end(actions),
-                [checker_index](const auto& el) { return el.first == checker_index; }
-            );
-            assert(it != std::end(actions) && "No actions found for checker index");
-            return it;
-        }
+        
 
-        MoveForm::MoveForm(const CheckerIndex checker_index, std::vector<std::pair<CheckerIndex, std::vector<MoveAction>>>&& actions)
-            : m_index{checker_index}, m_actions{utils::checked_move(actions)} {
-            const auto it = find_checker_actions(checker_index, m_actions);
-            m_index_actions = std::span{it->second};
-        }
+        
 
-        attack::Form::Form(const CheckerIndex checker_index, std::vector<std::pair<CheckerIndex, CollectAttacksResult>>&& actions)
-            : m_index{checker_index}, m_actions{utils::checked_move(actions)} {
-            const auto it = find_checker_actions(checker_index, m_actions);
-            m_index_nodes.emplace_back(convert_checker_index_to_board_index(checker_index), it->second.actions);
-        }
+        
 
         using OtherCheckerSelected = strong::type<CheckerIndex, struct OtherCheckerSelected_>;
         using IterationResult = std::variant<
@@ -161,20 +108,7 @@ namespace mcts_checkers::board::human {
             selection_confirmed::Attack
         >;
 
-        void draw_action_rect(const BoardVector board_vector, const ImU32 color) {
-            const auto cell_size = calc_cell_size();
-            constexpr auto padding_percentage = 0.3;
-            const auto padding = cell_size * padding_percentage;
-            const auto p_min = calc_cell_top_left(board_vector);
-            const auto p_max = p_min + cell_size;
-            const auto padded_p_min = p_min + padding;
-            const auto padded_p_max = p_max - padding;
-            ImGui::GetWindowDrawList()->AddRectFilled(padded_p_min, padded_p_max, color);
-        }
-
-        void draw_action_rect(const BoardIndex board_vector, const ImU32 color) {
-            draw_action_rect(convert_board_index_to_board_vector(board_vector), color);
-        }
+        
     }
 
     selected::IterationResult iter(selected::MoveForm& form, const GameData&) {
@@ -269,21 +203,8 @@ namespace mcts_checkers::board::human {
         >;
     }
 
-    initial::IterationResult iter(const initial::State, const GameData& game_data) {
-        return std::visit(utils::overloaded{
-            [](turn_actions::MakeMove&& actions) -> initial::IterationResult {
-                return unselected::MoveForm{utils::checked_move(actions)};
-            },
-            [](turn_actions::MakeAttack&& actions) -> initial::IterationResult {
-                return unselected::AttackForm{utils::checked_move(actions)};
-            },
-            [](turn_actions::DeclareLoss actions) -> initial::IterationResult {
-                return actions;
-            },
-            [](turn_actions::DeclareDraw actions) -> initial::IterationResult {
-                return actions;
-            }
-        }, turn_actions::determine(game_data));
+    initial::IterationResult iter(const initial::Form, const GameData& game_data) {
+        
     }
 
     IterationResult iter(Form& form, const GameData& game_data) {
@@ -310,19 +231,19 @@ namespace mcts_checkers::board::human {
                 return PlayerMadeNoSelection{};
             },
             [&form](const selection_confirmed::Move action) -> IterationResult {
-                form.value_of() = initial::State{};
+                form.value_of() = initial::Form{};
                 return action;
             },
             [&form](selection_confirmed::Attack&& action) -> IterationResult  {
-                form.value_of() = initial::State{};
+                form.value_of() = initial::Form{};
                 return utils::checked_move(action);
             },
             [&form](const turn_actions::DeclareLoss action) -> IterationResult {
-                form.value_of() = initial::State{};
+                form.value_of() = initial::Form{};
                 return action;
             },
             [&form](const turn_actions::DeclareDraw action) -> IterationResult {
-                form.value_of() = initial::State{};
+                form.value_of() = initial::Form{};
                 return action;
             },
             [&form](auto&& state) -> IterationResult {

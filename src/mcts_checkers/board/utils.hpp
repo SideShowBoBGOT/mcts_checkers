@@ -15,5 +15,6 @@ namespace mcts_checkers {
         Type determine(const GameData& game_data);
     }
 
-
+    ImVec2 calc_cell_size();
+    ImVec2 calc_cell_top_left(const BoardVector board_index);
 }

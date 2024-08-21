@@ -3,6 +3,7 @@
 
 namespace mcts_checkers::board {
 
+
     namespace {
         
         consteval ImVec4 normalize_rgba_color(const ImVec4 vec) {
@@ -29,9 +30,7 @@ namespace mcts_checkers::board {
         const auto PLAYER_TWO_PAWN_COLOR = BLACK_COLOR;
         const auto KING_HAT_COLOR = GREY_COLOR;
 
-        ImVec2 calc_cell_size() {
-            return ImGui::GetWindowSize() / CELLS_PER_SIDE;
-        }
+        
 
         // ImVec2 calc_mouse_local_window_pos() {
         //     return ImGui::GetMousePos() - ImGui::GetCursorScreenPos();
@@ -51,9 +50,7 @@ namespace mcts_checkers::board {
             };
         }
 
-        ImVec2 calc_cell_top_left(const BoardVector board_index) {
-            return calc_cell_size() * convert_board_vector_to_imvec(board_index) + ImGui::GetCursorScreenPos();
-        }
+        
 
         void draw_rects() {
             const auto draw_list = ImGui::GetWindowDrawList();
@@ -96,6 +93,9 @@ namespace mcts_checkers::board {
             // [](const GameData& game_data) -> detail::State { return ai::Form{game_data}; }
             [](const GameData&) -> detail::State { return ai::Form{}; },
         };
+
+
+        
     }
     
     
