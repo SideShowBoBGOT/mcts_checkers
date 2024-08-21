@@ -47,20 +47,11 @@ namespace mcts_checkers::board::human {
         return convert_board_vector_to_checker_index(cell_index);
     }
 
-    static BoardVector calc_hovered_cell() {
-        return convert_imvec_to_board_vector(calc_mouse_local_window_pos() / calc_cell_size());
-    }
+    
 
-    static void draw_hovered_cell(const BoardVector checker_board_vector, const ImU32 color) {
-        const auto cell_size = calc_cell_size();
-        const auto p_min = calc_cell_top_left(checker_board_vector);
-        const auto p_max = p_min + cell_size;
-        ImGui::GetWindowDrawList()->AddRect(p_min, p_max, color, 0, 0, 8);
-    }
+    
 
-    static void draw_hovered_cell(const CheckerIndex checker_index, const ImU32 color) {
-        draw_hovered_cell(convert_checker_index_to_board_vector(checker_index), color);
-    }
+    
 
     struct StateNotChange{};
 
@@ -110,89 +101,6 @@ namespace mcts_checkers::board::human {
 
         
     }
-
-    selected::IterationResult iter(selected::MoveForm& form, const GameData&) {
-        unselected_selected_common::draw_action_cells(form.m_actions);
-        for(const auto& action : form.m_index_actions) {
-            selected::draw_action_rect(action._val, PURPLE_COLOR);
-        }
-        draw_hovered_cell(form.m_index, BLUE_COLOR);
-
-        if(ImGui::IsWindowHovered(ImGuiHoveredFlags_None)) {
-            const auto checker_board_vector = calc_hovered_cell();
-            const auto checker_board_index = convert_board_vector_to_board_index(checker_board_vector);
-            const auto it = std::find_if(std::begin(form.m_index_actions), std::end(form.m_index_actions),
-            [checker_board_index](const MoveAction action) { return action._val == checker_board_index; });
-            if(it != std::end(form.m_index_actions)) {
-                draw_hovered_cell(checker_board_vector, PURPLE_COLOR);
-                if(ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
-                    return selection_confirmed::Move{
-                        MoveAction{checker_board_index},
-                        form.m_index
-                    };
-                }
-            } else if(
-                auto selection_result = unselected_selected_common::select_checker<selected::MoveForm>(form);
-                not std::holds_alternative<StateNotChange>(selection_result)
-            ) {
-                return utils::variant_move<selected::IterationResult>(utils::checked_move(selection_result));
-            }
-        }
-        return StateNotChange{};
-    }
-
-    selected::IterationResult iter(selected::attack::Form& form, const GameData&) {
-        unselected_selected_common::draw_action_cells(form.m_actions);
-        for(const auto& node : form.m_index_nodes | std::views::drop(1)) {
-            selected::draw_action_rect(node.m_index, RED_COLOR);
-        }
-        for(const auto& action : form.m_index_nodes.back().m_actions) {
-            selected::draw_action_rect(action.m_board_index, PINK_COLOR);
-        }
-        draw_hovered_cell(form.m_index, BLUE_COLOR);
-
-
-        if(is_window_hovered()) {
-            if(ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
-                if(form.m_index_nodes.size() > 1) {
-                    form.m_index_nodes.pop_back();
-                }
-            }
-
-            const auto checker_board_vector = calc_hovered_cell();
-            const auto& last_node = form.m_index_nodes.back();
-            const auto it = std::find_if(std::begin(last_node.m_actions), std::end(last_node.m_actions),
-                [index=convert_board_vector_to_board_index(checker_board_vector)](const AttackTree& action) {
-                    return action.m_board_index == index;
-                });
-            if(it != std::end(last_node.m_actions)) {
-                draw_hovered_cell(checker_board_vector, PINK_COLOR);
-                if(ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
-                    form.m_index_nodes.emplace_back(it->m_board_index, it->m_child_trees);
-                    if(it->m_child_trees.empty()) {
-                        auto actions = form.m_index_nodes
-                            | ranges::views::transform(
-                                [index=convert_checker_index_to_board_index(form.m_index)]
-                                (const selected::attack::Node& node) {
-                                    return AttackAction{node.m_index};
-                                })
-                            | ranges::to_vector;
-                        assert(not actions.empty() && "Actions can not be empty");
-                        return selection_confirmed::Attack{utils::checked_move(actions)};
-                    }
-                    return StateNotChange{};
-                }
-            } else if(
-                auto selection_result = unselected_selected_common::select_checker<selected::attack::Form>(form);
-                not std::holds_alternative<StateNotChange>(selection_result)
-            ) {
-                return utils::variant_move<selected::IterationResult>(utils::checked_move(selection_result));
-            }
-        }
-        return StateNotChange{};
-    }
-
-    
 
     namespace initial {
         using IterationResult = std::variant<
