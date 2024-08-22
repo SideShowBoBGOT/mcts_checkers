@@ -2,10 +2,23 @@
 
 #include <variant>
 #include <mcts_checkers/board/utils.hpp>
+#include <future>
 
 namespace mcts_checkers::board::ai {
 
-    struct Form {};
+    struct Initial {};
+    struct Active {
+        Active(const GameData& game_data);
+        std::future<PlayerMessage::Type> m_task;
+    };
 
-    PlayerMessage::Type iter(Form, const GameData& game_data);
+    using State = std::variant<
+        Initial, Active
+    >;
+
+    struct Form {
+        State m_state;
+    };
+
+    PlayerMessage::Type iter(Form& form, const GameData& game_data);
 }

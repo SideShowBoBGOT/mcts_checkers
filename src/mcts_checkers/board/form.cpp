@@ -58,7 +58,7 @@ namespace mcts_checkers::board {
         constexpr std::array<detail::State(*)(const GameData&), 2> STATE_FACTORIES = {
             [](const GameData&) -> detail::State { return human::Form{}; },
             // [](const GameData& game_data) -> detail::State { return ai::Form{game_data}; }
-            [](const GameData&) -> detail::State { return human::Form{}; },
+            [](const GameData&) -> detail::State { return ai::Form{}; },
         };
     }
 
@@ -76,26 +76,23 @@ namespace mcts_checkers::board {
         draw_rects();
         draw_checkers(form.m_game_data);
 
-        const auto player_message = std::visit(
-            [&game_data = std::as_const(form.m_game_data)]
-            (auto& state) -> PlayerMessage::Type {
-                return iter(state, game_data);
-            }, form.m_state
-        );
+        const auto player_message = std::visit(utils::overloaded{
+            [&game_data=form.m_game_data](human::Form& form) -> PlayerMessage::Type {
+                return human::iter(form, game_data);
+            },
+            [&game_data=form.m_game_data](ai::Form& form) -> PlayerMessage::Type {
+                return ai::iter(form, game_data);
+            },
+        }, form.m_state);
 
-        // struct PlayerMadeNoSelection {};
-        // struct PlayerMadeSelection { GameData m_game_data; };
-        // struct DeclareLoss { PlayerIndex m_index; };
-        // struct DeclareDraw {};
-
-        std::visit(utils::overloaded{
-            [](const PlayerMessage::PlayerMadeNoSelection message) -> OutMessage::Type {
-                return OutMessage::MakingDecision{};
+        return std::visit(utils::overloaded{
+            [player_index=form.m_game_data.m_current_player_index](const PlayerMessage::PlayerMadeNoSelection) -> OutMessage::Type {
+                return OutMessage::ContinueGame{player_index};
             },
             [&form](const PlayerMessage::PlayerMadeSelection message) -> OutMessage::Type {
                 form.m_game_data = message.m_game_data;
                 form.m_state = STATE_FACTORIES[static_cast<uint8_t>(form.m_game_data.m_current_player_index)](form.m_game_data);
-                return OutMessage::MakingDecision{};
+                return OutMessage::ContinueGame{form.m_game_data.m_current_player_index};
             },
             [](const PlayerMessage::DeclareLoss message) -> OutMessage::Type {
                 return OutMessage::DeclareWin{opposite_player(message.m_index)};
@@ -104,30 +101,6 @@ namespace mcts_checkers::board {
                 return OutMessage::DeclareDraw{};
             }
         }, player_message);
-
-        // return std::visit(utils::overloaded{
-        //     [&game_data=std::as_const(form.m_game_data)](const PlayerMadeNoSelection) -> OutMessage {
-        //         return MakingDecision{game_data.m_current_player_index};
-        //     },
-        //     [](const turn_actions::DeclareLoss action) -> OutMessage {
-        //         return DeclareWin{opposite_player(action.m_player_index)};
-        //     },
-        //     [&game_data=std::as_const(form.m_game_data)](const turn_actions::DeclareDraw) -> OutMessage {
-        //         return DeclareDraw{};
-        //     },
-        //     [&form](const selection_confirmed::Move& action) -> OutMessage {
-        //         apply_move(form.m_game_data, action.checker_index, action.data);
-        //         form.m_state = STATE_FACTORIES[static_cast<uint8_t>(form.m_game_data.m_current_player_index)](form.m_game_data);
-        //         return MakingDecision{form.m_game_data.m_current_player_index};
-        //     },
-        //     [&form](const selection_confirmed::Attack& action) -> OutMessage {
-        //         apply_attack(form.m_game_data, action.data);
-        //         form.m_state = STATE_FACTORIES[static_cast<uint8_t>(form.m_game_data.m_current_player_index)](form.m_game_data);
-        //         return MakingDecision{form.m_game_data.m_current_player_index};
-        //     }
-        // }, action);
-
-        return OutMessage::Type{};
     }
 
 }

@@ -15,7 +15,7 @@ namespace mcts_checkers {
             [](const board::OutMessage::DeclareWin message) -> statistic::InputMessage {
                 return statistic::ShowWin{message.m_player_index};
             },
-            [](const board::OutMessage::MakingDecision message) -> statistic::InputMessage {
+            [](const board::OutMessage::ContinueGame message) -> statistic::InputMessage {
                 return statistic::ShowMakingDecision{message.m_player_index};
             }
         }, out_message);

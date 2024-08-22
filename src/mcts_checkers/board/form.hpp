@@ -21,9 +21,9 @@ namespace mcts_checkers::board {
     namespace OutMessage {
         struct DeclareDraw {};
         struct DeclareWin { PlayerIndex m_player_index; };
-        struct MakingDecision { PlayerIndex m_player_index; };
+        struct ContinueGame { PlayerIndex m_player_index; };
 
-        using Type = std::variant<DeclareDraw, DeclareWin, MakingDecision>;
+        using Type = std::variant<DeclareDraw, DeclareWin, ContinueGame>;
     }
 
     OutMessage::Type iter_out(Form& form);
