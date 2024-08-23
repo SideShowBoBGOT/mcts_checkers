@@ -40,7 +40,6 @@ namespace mcts_checkers {
                     }
                 }
             }
-
         }
 
         Type determine(const GameData& game_data) {
