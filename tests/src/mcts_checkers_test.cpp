@@ -25,29 +25,37 @@ namespace nlohmann {
                     case 'o': {
                         data.m_is_in_place[checker_index] = true;
                         data.m_is_king[checker_index] = false;
-                        data.m_player_index[checker_index] = false;
+                        data.m_player_index[checker_index] = true;
                         break;
                     }
                     case 'O': {
                         data.m_is_in_place[checker_index] = true;
                         data.m_is_king[checker_index] = true;
-                        data.m_player_index[checker_index] = false;
+                        data.m_player_index[checker_index] = true;
                         break;
                     }
                     case 'x': {
                         data.m_is_in_place[checker_index] = true;
                         data.m_is_king[checker_index] = false;
-                        data.m_player_index[checker_index] = true;
+                        data.m_player_index[checker_index] = false;
                         break;
                     }
                     default: {
                         data.m_is_in_place[checker_index] = false;
                         data.m_is_king[checker_index] = false;
-                        data.m_player_index[checker_index] = false;
+                        data.m_player_index[checker_index] = true;
                         break;
                     }
                 }
             }
         }
+    }
+
+    mcts_checkers::CheckerIndex adl_serializer<mcts_checkers::CheckerIndex>::from_json(const json& j) {
+        return mcts_checkers::CheckerIndex{j.get<uint8_t>()};
+    }
+
+    mcts_checkers::BoardIndex adl_serializer<mcts_checkers::BoardIndex>::from_json(const json& j) {
+        return mcts_checkers::BoardIndex{j.get<uint8_t>()};
     }
 }

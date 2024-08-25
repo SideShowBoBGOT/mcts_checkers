@@ -1,4 +1,4 @@
-#include <mcts_checkers/board/ai/form.hpp>
+#include <mcts_checkers/board/ai_form.hpp>
 #include <mcts_checkers/index_converters.hpp>
 #include <mcts_checkers/action_application_funcs.hpp>
 #include <random>
@@ -100,32 +100,29 @@ namespace mcts_checkers::board::ai {
                 std::vector<Node> m_children{};
             };
 
-            void back_propagate(Node& node) {
+            void back_propagate(Node& node, int8_t score) {
+                node.m_value = score;
                 ++node.m_visits;
                 auto parent = node.m_parent;
-                uint64_t i = 0;
                 while(parent != nullptr) {
-                    parent->m_value += node.m_value;
+                    parent->m_value += score;
                     ++parent->m_visits;
                     parent = parent->m_parent;
-
-                    fmt::print("rollout {}\n", i);
-                    ++i;
                 }
             }
 
-            void rollout(
-                Node& node,
+            int8_t rollout(
+                const Node& node,
                 std::default_random_engine& generator,
                 const PlayerIndex ai_player_index
             ) {
                 auto game_data = node.m_game_data;
-                uint64_t i = 0;
+                int8_t score = 0;
                 while(
                     std::visit(utils::overloaded{
-                        [&const_game_data = std::as_const(game_data), &node, ai_player_index]
+                        [&const_game_data = std::as_const(game_data), &score, ai_player_index]
                             (const turn_actions::DeclareLoss action) {
-                            node.m_value += ai_player_index == action.m_player_index ? -1 : 1;
+                            score = ai_player_index == action.m_player_index ? -1 : 1;
                             return false;
                         },
                         [](const turn_actions::DeclareDraw) {
@@ -142,33 +139,8 @@ namespace mcts_checkers::board::ai {
                             return true;
                         }
                     }, turn_actions::determine(game_data))
-                ) {
-                    fmt::print("rollout {}\n", i);
-                    ++i;
-                }
-            }
-
-            void rollout_back_propagate(
-                Node& node,
-                std::default_random_engine& generator,
-                const PlayerIndex ai_player_index
-            ) {
-                rollout(node, generator, ai_player_index);
-                back_propagate(node);
-            }
-
-            void back_propagate_terminal(Node& node) {
-                ++node.m_visits;
-                auto parent = node.m_parent;
-                uint64_t i = 0;
-
-                while(parent != nullptr) {
-                    ++parent->m_visits;
-                    parent = parent->m_parent;
-
-                    fmt::print("rollout {}\n", i);
-                    ++i;
-                }
+                ) {}
+                return score;
             }
 
             namespace expand {
@@ -188,21 +160,15 @@ namespace mcts_checkers::board::ai {
                     Node& node,
                     std::vector<AttackAction>& chain
                 ) {
-                    std::printf("attack_add_children 1\n");
                     chain.emplace_back(tree.m_board_index);
                     ON_SCOPE_EXIT { chain.pop_back(); };
                     if(tree.m_child_trees.empty()) {
-                        std::printf("attack_add_children 2\n");
-
                         auto child_data = node.m_game_data;
                         apply_attack(child_data, chain);
                         node.m_children.emplace_back(&node, child_data);
-                        std::printf("attack_add_children 3\n");
-
                         return;
                     }
                     for(const auto& child_tree : tree.m_child_trees) {
-                        std::printf("attack_add_children 4\n");
                         attack_add_children(child_tree, node, chain);
                     }
                 }
@@ -223,7 +189,6 @@ namespace mcts_checkers::board::ai {
                 void visitor(Node&, turn_actions::DeclareLoss) {}
 
                 void execute(Node& node) {
-                    fmt::print("expand\n");
                     std::visit([&node](auto&& checkers_actions) {
                         visitor(node, utils::checked_move(checkers_actions));
                     }, turn_actions::determine(node.m_game_data));
@@ -244,8 +209,6 @@ namespace mcts_checkers::board::ai {
             std::vector<Node>::iterator get_max_score_child(Node& node) {
                 return std::max_element(std::begin(node.m_children), std::end(node.m_children),
                     [parent_visits=node.m_visits](const Node& lhs, const Node& rhs) {
-                        // if(lhs.m_visits == 0) return true;
-                        // if(rhs.m_visits == 0) return false;
                         const auto lhs_usb = calc_ucb1(parent_visits, lhs.m_visits, lhs.m_value);
                         const auto rhs_usb = calc_ucb1(parent_visits, rhs.m_visits, rhs.m_value);
                         return lhs_usb < rhs_usb;
@@ -253,36 +216,16 @@ namespace mcts_checkers::board::ai {
                 );
             }
 
-            void select(
-                Node& node,
-                std::default_random_engine& generator,
-                const PlayerIndex ai_player_index
-            ) {
-                if(node.m_children.empty()) {
-                    fmt::print("select 1\n");
-                    if(node.m_visits == 0) {
-                        fmt::print("select 2\n");
-
-                        rollout_back_propagate(node, generator, ai_player_index);
-                    } else {
-                        fmt::print("select 3\n");
-
-                        expand::execute(node);
-                        fmt::print("select 3*****\n");
-                        if(node.m_children.empty()) {
-                            fmt::print("select 4\n");
-
-                            back_propagate_terminal(node);
-                        } else {
-                            fmt::print("select 5\n");
-
-                            rollout_back_propagate(node.m_children.front(), generator, ai_player_index);
-                        }
+            Node& select(Node& node) {
+                auto current_node = &node;
+                while(true) {
+                    if(current_node->m_children.empty() or current_node->m_visits == 0) {
+                        break;
                     }
-                } else {
-                    fmt::print("select 6\n");
-                    select(*get_max_score_child(node), generator, ai_player_index);
+                    fmt::print("select\n");
+                    current_node = get_max_score_child(*current_node).base();
                 }
+                return *current_node;
             }
 
             PlayerMessage::Type calculate_move(const GameData& game_data) {
@@ -296,21 +239,30 @@ namespace mcts_checkers::board::ai {
                         return PlayerMessage::DeclareLoss{loss->m_player_index};
                     }
                 }
-
                 {
                     auto generator = std::default_random_engine(std::chrono::system_clock::now().time_since_epoch().count());
-                    using namespace std::chrono_literals;
-                    // const auto start = std::chrono::high_resolution_clock::now();
                     for(size_t i = 0; i < 1000; ++i) {
-                        select(root, generator, game_data.m_current_player_index);
+                        auto current_node = &root;
+                        while(true) {
+                            if(current_node->m_visits == 0) {
+                                expand::execute(*current_node);
+                                if(current_node->m_children.empty()) {
+                                    back_propagate(*current_node, 0);
+                                } else {
+                                    const auto score = rollout(current_node->m_children.front(), generator, game_data.m_current_player_index);
+                                    back_propagate(*current_node, score);
+                                }
+                                break;
+                            }
+                            if(current_node->m_children.empty()) {
+                                back_propagate(*current_node, 0);
+                                break;
+                            }
+                            current_node = get_max_score_child(*current_node).base();
+                        }
                     }
-                    // while(std::chrono::high_resolution_clock::now() - start < 2s) {
-                    //     select(root, generator);
-                    // }
                 }
                 assert(not root.m_children.empty());
-                fmt::print("calculate_move end\n");
-
                 return PlayerMessage::PlayerMadeSelection{get_max_score_child(root)->m_game_data};
             }
         }

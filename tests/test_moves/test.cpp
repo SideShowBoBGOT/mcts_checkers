@@ -10,17 +10,10 @@
 struct TestData {
     mcts_checkers::BoardVector checker_vector;
     mcts_checkers::CheckersData board;
-    std::vector<mcts_checkers::MoveAction> result;
+    std::list<mcts_checkers::MoveAction> result;
 };
 
 namespace nlohmann {
-
-    template<>
-    struct adl_serializer<mcts_checkers::BoardIndex> {
-        static mcts_checkers::BoardIndex from_json(const json& j) {
-            return mcts_checkers::BoardIndex{j.get<uint8_t>()};
-        }
-    };
 
     template<>
     struct adl_serializer<mcts_checkers::MoveAction> {
@@ -30,33 +23,23 @@ namespace nlohmann {
     };
 
     template<>
-    struct adl_serializer<mcts_checkers::AttackTree> {
-        static void from_json(const json& j, mcts_checkers::AttackTree& data) {
-            data.m_board_index = mcts_checkers::BoardIndex{j["index"].get<uint8_t>()};
-            for(const auto& ch : j["children"]) {
-                from_json(ch, data.m_child_trees.emplace_back());
-            }
-        }
-    };
-
-    template<>
     struct adl_serializer<TestData> {
         static void from_json(const json& j, TestData& data) {
             data.checker_vector = j["checker_vector"].get<mcts_checkers::BoardVector>();
             data.board = j["board"].get<mcts_checkers::CheckersData>();
-            data.result = j["result"].get<std::vector<mcts_checkers::MoveAction>>();
+            data.result = j["result"].get<std::list<mcts_checkers::MoveAction>>();
         }
     };
 
 }
 
-std::unordered_set<mcts_checkers::MoveAction> validate_unique(const std::vector<mcts_checkers::MoveAction>& v) {
+std::unordered_set<mcts_checkers::MoveAction> validate_unique(const std::list<mcts_checkers::MoveAction>& v) {
     auto s = std::unordered_set(std::begin(v), std::end(v));
     EXPECT_EQ(s.size(), v.size());
     return s;
 }
 
-void validate_result(const std::vector<mcts_checkers::MoveAction>& result, const std::vector<mcts_checkers::MoveAction>& expected) {
+void validate_result(const std::list<mcts_checkers::MoveAction>& result, const std::list<mcts_checkers::MoveAction>& expected) {
     const auto result_set = validate_unique(result);
     const auto expected_set = validate_unique(expected);
     EXPECT_EQ(result_set, expected_set);
@@ -69,7 +52,11 @@ TEST(TestMoves, Sanity) {
     file_stream >> json_file;
     for(const auto& json_test_data : json_file) {
         const auto test_data = json_test_data.get<TestData>();
-        const auto result = collect_moves(test_data.board, test_data.checker_vector);
-        validate_result(result, test_data.result);
+        const auto result = mcts_checkers::action_collection::move::collect(
+            test_data.board,
+            mcts_checkers::convert_board_vector_to_checker_index(test_data.checker_vector),
+            std::allocator<mcts_checkers::MoveAction>()
+        );
+        validate_result(result.m_actions, test_data.result);
     }
 }

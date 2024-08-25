@@ -1,4 +1,4 @@
-#include <mcts_checkers/board/human/form.hpp>
+#include <mcts_checkers/board/human_form.hpp>
 #include <mcts_checkers/utils.hpp>
 #include <mcts_checkers/index_converters.hpp>
 #include <mcts_checkers/action_application_funcs.hpp>
@@ -309,7 +309,8 @@ namespace mcts_checkers::board::human {
                         const auto it = std::find_if(std::begin(last_node.m_actions), std::end(last_node.m_actions),
                             [index=convert_board_vector_to_board_index(checker_board_vector)](const AttackTree& action) {
                                 return action.m_board_index == index;
-                            });
+                            }
+                        );
                         if(it != std::end(last_node.m_actions)) {
                             draw_hovered_cell(checker_board_vector, PINK_COLOR);
                             if(ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {

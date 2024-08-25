@@ -15,7 +15,11 @@
       "9 # # # # #",
       " 0123456789"
     ],
-    "result": []
+    "output": {
+      "depth": 0,
+      "checker_index": 40,
+      "actions": []
+    }
   },
   {
     "checker_vector": [5, 2],
@@ -33,7 +37,11 @@
       "9 # # # # #",
       " 0123456789"
     ],
-    "result": []
+    "output": {
+      "depth": 0,
+      "checker_index": 12,
+      "actions": []
+    }
   },
   {
     "checker_vector": [5, 2],
@@ -51,15 +59,22 @@
       "9 # # # # #",
       " 0123456789"
     ],
-    "result": [
-      {
-        "index": 7,
-        "children": []
-      }
-    ]
+    "output": {
+      "depth": 1,
+      "checker_index": 12,
+      "actions": [
+        {
+          "board_index": 7,
+          "children": []
+        }
+      ]
+    }
   },
   {
-    "checker_vector": [2, 3],
+    "checker_vector": [
+      2,
+      3
+    ],
     "board": [
       " 0123456789",
       "0# # # # # ",
@@ -74,54 +89,61 @@
       "9 # # # # #",
       " 0123456789"
     ],
-    "result": [
-      {
-        "index": 54,
-        "children": [
-          {
-            "index": 76,
-            "children": [
-              {
-                "index": 94,
-                "children": [
-                  {
-                    "index": 72,
-                    "children": [
-                      {
-                        "index": 54,
-                        "children": []
-                      }
-                    ]
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "index": 72,
-            "children": [
-              {
-                "index": 94,
-                "children": [
-                  {
-                    "index": 76,
-                    "children": [
-                      {
-                        "index": 54,
-                        "children": []
-                      }
-                    ]
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      }
-    ]
+    "output": {
+      "depth":  5,
+      "checker_index": 16,
+      "actions": [
+        {
+          "board_index": 54,
+          "children": [
+            {
+              "board_index": 76,
+              "children": [
+                {
+                  "board_index": 94,
+                  "children": [
+                    {
+                      "board_index": 72,
+                      "children": [
+                        {
+                          "board_index": 54,
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "board_index": 72,
+              "children": [
+                {
+                  "board_index": 94,
+                  "children": [
+                    {
+                      "board_index": 76,
+                      "children": [
+                        {
+                          "board_index": 54,
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
   },
   {
-    "checker_vector": [5, 2],
+    "checker_vector": [
+      5,
+      2
+    ],
     "board": [
       " 0123456789",
       "0# # # # # ",
@@ -136,43 +158,50 @@
       "9 # # # # #",
       " 0123456789"
     ],
-    "result": [
-      {
-        "index": 61,
-        "children": [
-          {
-            "index": 94,
-            "children": [
-              {
-                "index": 49,
-                "children": []
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "index": 69,
-        "children": [
-          {
-            "index": 96,
-            "children": [
-              {
-                "index": 41,
-                "children": []
-              },
-              {
-                "index": 30,
-                "children": []
-              }
-            ]
-          }
-        ]
-      }
-    ]
+    "output": {
+      "depth": 3,
+      "checker_index": 12,
+      "actions": [
+        {
+          "board_index": 61,
+          "children": [
+            {
+              "board_index": 94,
+              "children": [
+                {
+                  "board_index": 49,
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "board_index": 69,
+          "children": [
+            {
+              "board_index": 96,
+              "children": [
+                {
+                  "board_index": 41,
+                  "children": []
+                },
+                {
+                  "board_index": 30,
+                  "children": []
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
   },
   {
-    "checker_vector": [1, 2],
+    "checker_vector": [
+      1,
+      2
+    ],
     "board": [
       " 0123456789",
       "0# # #x# # ",
@@ -187,137 +216,144 @@
       "9 # # # #x#",
       " 0123456789"
     ],
-    "result": [
-      {
-        "index": 43,
-        "children": [
-          {
-            "index": 7,
-            "children": [
-              {
-                "index": 29,
-                "children": [
-                  {
-                    "index": 47,
-                    "children": [
-                      {
-                        "index": 69,
-                        "children": [
-                          {
-                            "index": 96,
-                            "children": [
-                              {
-                                "index": 74,
-                                "children": [
-                                  {
-                                    "index": 56,
-                                    "children": []
-                                  },
-                                  {
-                                    "index": 47,
-                                    "children": []
-                                  },
-                                  {
-                                    "index": 38,
-                                    "children": []
-                                  },
-                                  {
-                                    "index": 29,
-                                    "children": []
-                                  }
-                                ]
-                              }
-                            ]
-                          }
-                        ]
-                      },
-                      {
-                        "index": 74,
-                        "children": [
-                          {
-                            "index": 96,
-                            "children": [
-                              {
-                                "index": 69,
-                                "children": [
-                                  {
-                                    "index": 47,
-                                    "children": []
-                                  },
-                                  {
-                                    "index": 36,
-                                    "children": []
-                                  },
-                                  {
-                                    "index": 25,
-                                    "children": []
-                                  },
-                                  {
-                                    "index": 14,
-                                    "children": []
-                                  },
-                                  {
-                                    "index": 3,
-                                    "children": []
-                                  }
-                                ]
-                              }
-                            ]
-                          }
-                        ]
-                      }
-                    ]
-                  },
-                  {
-                    "index": 56,
-                    "children": [
-                      {
-                        "index": 74,
-                        "children": [
-                          {
-                            "index": 96,
-                            "children": [
-                              {
-                                "index": 69,
-                                "children": [
-                                  {
-                                    "index": 47,
-                                    "children": []
-                                  },
-                                  {
-                                    "index": 36,
-                                    "children": []
-                                  },
-                                  {
-                                    "index": 25,
-                                    "children": []
-                                  },
-                                  {
-                                    "index": 14,
-                                    "children": []
-                                  },
-                                  {
-                                    "index": 3,
-                                    "children": []
-                                  }
-                                ]
-                              }
-                            ]
-                          }
-                        ]
-                      }
-                    ]
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      }
-    ]
+    "output": {
+      "depth": 8,
+      "checker_index": 10,
+      "actions": [
+        {
+          "board_index": 43,
+          "children": [
+            {
+              "board_index": 7,
+              "children": [
+                {
+                  "board_index": 29,
+                  "children": [
+                    {
+                      "board_index": 47,
+                      "children": [
+                        {
+                          "board_index": 69,
+                          "children": [
+                            {
+                              "board_index": 96,
+                              "children": [
+                                {
+                                  "board_index": 74,
+                                  "children": [
+                                    {
+                                      "board_index": 56,
+                                      "children": []
+                                    },
+                                    {
+                                      "board_index": 47,
+                                      "children": []
+                                    },
+                                    {
+                                      "board_index": 38,
+                                      "children": []
+                                    },
+                                    {
+                                      "board_index": 29,
+                                      "children": []
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "board_index": 74,
+                          "children": [
+                            {
+                              "board_index": 96,
+                              "children": [
+                                {
+                                  "board_index": 69,
+                                  "children": [
+                                    {
+                                      "board_index": 47,
+                                      "children": []
+                                    },
+                                    {
+                                      "board_index": 36,
+                                      "children": []
+                                    },
+                                    {
+                                      "board_index": 25,
+                                      "children": []
+                                    },
+                                    {
+                                      "board_index": 14,
+                                      "children": []
+                                    },
+                                    {
+                                      "board_index": 3,
+                                      "children": []
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "board_index": 56,
+                      "children": [
+                        {
+                          "board_index": 74,
+                          "children": [
+                            {
+                              "board_index": 96,
+                              "children": [
+                                {
+                                  "board_index": 69,
+                                  "children": [
+                                    {
+                                      "board_index": 47,
+                                      "children": []
+                                    },
+                                    {
+                                      "board_index": 36,
+                                      "children": []
+                                    },
+                                    {
+                                      "board_index": 25,
+                                      "children": []
+                                    },
+                                    {
+                                      "board_index": 14,
+                                      "children": []
+                                    },
+                                    {
+                                      "board_index": 3,
+                                      "children": []
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
   },
   {
-    "checker_vector": [0, 9],
+    "checker_vector": [
+      0,
+      9
+    ],
     "board": [
       " 0123456789",
       "0# # # # # ",
@@ -332,53 +368,57 @@
       "9O# # # # #",
       " 0123456789"
     ],
-    "result": [
-      {
-        "index": 63,
-        "children": [
-          {
-            "index": 36,
-            "children": [
-              {
-                "index": 3,
-                "children": [
-                  {
-                    "index": 21,
-                    "children": []
-                  },
-                  {
-                    "index": 30,
-                    "children": []
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "index": 54,
-        "children": [
-          {
-            "index": 36,
-            "children": [
-              {
-                "index": 3,
-                "children": [
-                  {
-                    "index": 21,
-                    "children": []
-                  },
-                  {
-                    "index": 30,
-                    "children": []
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      }
-    ]
+    "output": {
+      "depth": 4,
+      "checker_index": 45,
+      "actions": [
+        {
+          "board_index": 63,
+          "children": [
+            {
+              "board_index": 36,
+              "children": [
+                {
+                  "board_index": 3,
+                  "children": [
+                    {
+                      "board_index": 21,
+                      "children": []
+                    },
+                    {
+                      "board_index": 30,
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "board_index": 54,
+          "children": [
+            {
+              "board_index": 36,
+              "children": [
+                {
+                  "board_index": 3,
+                  "children": [
+                    {
+                      "board_index": 21,
+                      "children": []
+                    },
+                    {
+                      "board_index": 30,
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
   }
 ]

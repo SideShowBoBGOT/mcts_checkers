@@ -1,5 +1,5 @@
 #pragma once
-#include <mcts_checkers/checkers_types.hpp>
+#include <mcts_checkers/checkers_data.hpp>
 
 namespace mcts_checkers {
     template<std::integral T>
