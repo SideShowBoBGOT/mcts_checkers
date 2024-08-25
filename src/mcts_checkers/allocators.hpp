@@ -45,6 +45,7 @@ namespace mcts_checkers {
                 : m_memory_resource(l.m_memory_resource) {}
 
             T* allocate(const std::size_t n) {
+                assert(m_memory_resource != nullptr);
                 T* result = reinterpret_cast<T*>(m_memory_resource->allocate(n * sizeof(T)));
                 return result;
             }

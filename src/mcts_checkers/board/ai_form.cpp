@@ -9,16 +9,16 @@ namespace mcts_checkers::board::ai {
     namespace random {
         namespace {
             template<typename T>
-            const T& get_random_element(const std::list<T>& v, std::default_random_engine& generator) {
+            const T& get_random_element(const std::list<T, MonotonicAllocator<T>>& v, std::default_random_engine& generator) {
                 assert(not v.empty() && "Distance can not be <= 0");
                 auto distribution = std::uniform_int_distribution<size_t>(0, v.size() - 1);
                 return *std::next(std::begin(v), distribution(generator));
             }
 
             void select_attack_chain(
-                const action_collection::attack::Node<std::allocator>& tree,
+                const action_collection::attack::Node<MonotonicAllocator>& tree,
                 std::default_random_engine& generator,
-                std::vector<BoardIndex>& chain
+                std::vector<BoardIndex, MonotonicAllocator<BoardIndex>>& chain
             ) {
                 chain.emplace_back(tree.m_board_index);
                 if(tree.m_child_trees.empty()) {
@@ -28,8 +28,8 @@ namespace mcts_checkers::board::ai {
                 select_attack_chain(child_tree, generator, chain);
             }
 
-            MoveAction select_random_move(
-                action_collection::turn_actions::Output::MakeMove<std::allocator>&& action,
+            apply_action::Move select_random_move(
+                action_collection::turn_actions::Output::MakeMove<MonotonicAllocator>&& action,
                 std::default_random_engine& generator
             ) {
                 const auto& checker_actions = get_random_element(action, generator);
@@ -37,13 +37,14 @@ namespace mcts_checkers::board::ai {
                 return {checker_actions.m_checker_index, specific_move};
             }
 
-            AttackAction select_random_attack(
-                action_collection::turn_actions::Output::MakeAttack<std::allocator>&& action,
-                std::default_random_engine& generator
+            apply_action::Attack<MonotonicAllocator> select_random_attack(
+                action_collection::turn_actions::Output::MakeAttack<MonotonicAllocator>&& action,
+                std::default_random_engine& generator,
+                MonotonicMemoryResource& memory_resource
             ) {
                 const auto& checker_actions = get_random_element(action, generator);
 
-                auto chain = std::vector<BoardIndex>{};
+                auto chain = std::vector<BoardIndex, MonotonicAllocator<BoardIndex>>(MonotonicAllocator<BoardIndex>(memory_resource));
                 chain.reserve(checker_actions.depth);
 
                 const auto& start_tree = get_random_element(checker_actions.m_actions, generator);
@@ -52,7 +53,7 @@ namespace mcts_checkers::board::ai {
                 return {checker_actions.m_checker_index, utils::checked_move(chain)};
             }
 
-            PlayerMessage::Type calculate_move(const GameData& game_data) {
+            PlayerMessage::Type calculate_move(const GameData& game_data, MonotonicMemoryResource& memory_resource) {
                 auto generator = std::default_random_engine(std::chrono::system_clock::now().time_since_epoch().count());
                 return std::visit(utils::overloaded{
                     [](const action_collection::turn_actions::Output::DeclareLoss message) -> PlayerMessage::Type {
@@ -61,19 +62,19 @@ namespace mcts_checkers::board::ai {
                     [](const action_collection::turn_actions::Output::DeclareDraw) -> PlayerMessage::Type {
                         return PlayerMessage::DeclareDraw{};
                     },
-                    [&generator, &game_data](action_collection::turn_actions::Output::MakeMove<std::allocator>&& action) -> PlayerMessage::Type {
+                    [&generator, &game_data](action_collection::turn_actions::Output::MakeMove<MonotonicAllocator>&& action) -> PlayerMessage::Type {
                         const auto selected_move = select_random_move(utils::checked_move(action), generator);
                         auto new_data = game_data;
-                        apply_move(new_data, selected_move);
+                        apply_action::move(new_data, selected_move);
                         return PlayerMessage::PlayerMadeSelection{new_data};
                     },
-                    [&generator, &game_data](action_collection::turn_actions::Output::MakeAttack<std::allocator>&& action) -> PlayerMessage::Type {
-                        const auto selected_attack = select_random_attack(utils::checked_move(action), generator);
+                    [&generator, &game_data, &memory_resource](action_collection::turn_actions::Output::MakeAttack<MonotonicAllocator>&& action) -> PlayerMessage::Type {
+                        const auto selected_attack = select_random_attack(utils::checked_move(action), generator, memory_resource);
                         auto new_data = game_data;
-                        apply_attack(new_data, selected_attack);
+                        apply_action::attack(new_data, selected_attack);
                         return PlayerMessage::PlayerMadeSelection{new_data};
                     }
-                }, action_collection::turn_actions::determine<std::allocator>(game_data));
+                }, action_collection::turn_actions::determine<MonotonicAllocator>(game_data, memory_resource));
             }
         }
     }
@@ -111,31 +112,31 @@ namespace mcts_checkers::board::ai {
     //             while(
     //                 std::visit(utils::overloaded{
     //                     [&const_game_data = std::as_const(game_data), &score, ai_player_index]
-    //                         (const turn_actions::DeclareLoss action) {
+    //                         (const action_collection::turn_actions::Output::DeclareLoss action) {
     //                         score = ai_player_index == action.m_player_index ? -1 : 1;
     //                         return false;
     //                     },
-    //                     [](const turn_actions::DeclareDraw) {
+    //                     [](const action_collection::turn_actions::Output::DeclareDraw) {
     //                         return false;
     //                     },
-    //                     [&game_data, &generator](turn_actions::MakeMove&& action) {
+    //                     [&game_data, &generator](action_collection::turn_actions::Output::MakeMove<MonotonicAllocator>&& action) {
     //                         const auto confirmed_action = random::select_random_move(utils::checked_move(action), generator);
     //                         apply_move(game_data, confirmed_action.m_index, confirmed_action.m_data);
     //                         return true;
     //                     },
-    //                     [&game_data, &generator](turn_actions::MakeAttack&& action) {
+    //                     [&game_data, &generator](action_collection::turn_actions::Output::MakeAttack<MonotonicAllocator>&& action) {
     //                         const auto confirmed_action = random::select_random_attack(utils::checked_move(action), generator);
     //                         apply_attack(game_data, confirmed_action.m_data);
     //                         return true;
     //                     }
-    //                 }, turn_actions::determine(game_data))
+    //                 }, action_collection::turn_actions::determine(game_data))
     //             ) {}
     //             return score;
     //         }
     //
     //         namespace expand {
     //
-    //             void visitor(Node& node, turn_actions::MakeMove&& checkers_actions) {
+    //             void visitor(Node& node, action_collection::turn_actions::Output::MakeMove&& checkers_actions) {
     //                 for(const auto& [checker_index, local_actions] : checkers_actions) {
     //                     for(const auto checker_action : local_actions) {
     //                         auto child_data = node.m_game_data;
@@ -220,12 +221,15 @@ namespace mcts_checkers::board::ai {
     //
     //         PlayerMessage::Type calculate_move(const GameData& game_data) {
     //             auto root = Node{nullptr, game_data};
+    //             thread_local auto MEMORY_RESOURCE_BUFFER = std::array<std::byte, 1024 * 20>{};
+    //             thread_local auto MEMORY_RESOURCE = MonotonicMemoryResource(MEMORY_RESOURCE_BUFFER);
+    //
     //             {
-    //                 const auto player_message = turn_actions::determine(game_data);
-    //                 if(std::holds_alternative<turn_actions::DeclareDraw>(player_message)) {
+    //                 const auto player_message = action_collection::turn_actions::determine<MonotonicAllocator>(game_data, MEMORY_RESOURCE);
+    //                 if(std::holds_alternative<action_collection::turn_actions::Output::DeclareDraw>(player_message)) {
     //                     return PlayerMessage::DeclareDraw{};
     //                 }
-    //                 if(const auto loss = std::get_if<turn_actions::DeclareLoss>(&player_message)) {
+    //                 if(const auto loss = std::get_if<action_collection::turn_actions::Output::DeclareLoss>(&player_message)) {
     //                     return PlayerMessage::DeclareLoss{loss->m_player_index};
     //                 }
     //             }
@@ -262,7 +266,12 @@ namespace mcts_checkers::board::ai {
         std::async(
             std::launch::async,
             [game_data_c = game_data]() -> PlayerMessage::Type {
-                return random::calculate_move(game_data_c);
+                static auto MEMORY_RESOURCE_BUFFER = std::array<std::byte, 1024 * 20>{};
+                static auto MEMORY_RESOURCE = MonotonicMemoryResource(MEMORY_RESOURCE_BUFFER);
+                ON_SCOPE_EXIT {
+                    MEMORY_RESOURCE.release();
+                };
+                return random::calculate_move(game_data_c, MEMORY_RESOURCE);
             }
         )
     } {}

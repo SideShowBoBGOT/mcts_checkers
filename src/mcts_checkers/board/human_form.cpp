@@ -220,7 +220,7 @@ namespace mcts_checkers::board::human {
                 
                 namespace OutMessage {
                     struct StateNotChange {};
-                    using Selected = strong::type<MoveAction, struct Selected_>;
+                    using Selected = strong::type<apply_action::Move, struct Selected_>;
                     struct SelectedOtherChecker {
                         CheckerIndex m_index;
                         action_collection::turn_actions::Output::MakeMove<std::allocator> m_actions;
@@ -251,7 +251,7 @@ namespace mcts_checkers::board::human {
                             draw_hovered_cell(destination_board_vector, PURPLE_COLOR);
                             if(ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
                                 return OutMessage::Selected{
-                                    MoveAction{form.m_index_actions->m_checker_index, destination_board_index}
+                                    apply_action::Move{form.m_index_actions->m_checker_index, destination_board_index}
                                 };
                             }
                         } else {
@@ -272,7 +272,7 @@ namespace mcts_checkers::board::human {
             namespace {
                 namespace OutMessage {
                     struct StateNotChange {};
-                    using Selected = strong::type<AttackAction, struct Selected_>;
+                    using Selected = strong::type<apply_action::Attack<std::allocator>, struct Selected_>;
                     struct SelectedOtherChecker {
                         CheckerIndex m_index;
                         action_collection::turn_actions::Output::MakeAttack<std::allocator> m_actions;
@@ -304,8 +304,6 @@ namespace mcts_checkers::board::human {
                         }
 
                         const auto checker_board_vector = calc_hovered_cell();
-
-
                         const auto it = std::ranges::find_if(actions_list,
                             [index=convert_board_vector_to_board_index(checker_board_vector)]
                             (const action_collection::attack::Node<std::allocator>& action) {
@@ -324,7 +322,7 @@ namespace mcts_checkers::board::human {
                                     for(const auto& node : form.m_selected_actions) {
                                         actions.emplace_back(node->m_board_index);
                                     }
-                                    return OutMessage::Selected{AttackAction(
+                                    return OutMessage::Selected{apply_action::Attack<std::allocator>(
                                         form.m_index_actions->m_checker_index, utils::checked_move(actions)
                                     )};
                                 }
@@ -388,7 +386,7 @@ namespace mcts_checkers::board::human {
                 return std::visit(utils::overloaded{
                     [&game_data](selected::move::OutMessage::Selected&& message) -> PlayerMessage::Type {
                         auto new_game_data = game_data;
-                        apply_move(new_game_data, message._val);
+                        apply_action::move(new_game_data, message._val);
                         return PlayerMessage::PlayerMadeSelection{new_game_data};
                     },
                     [&form](selected::move::OutMessage::SelectedOtherChecker&& message) -> PlayerMessage::Type {
@@ -404,7 +402,7 @@ namespace mcts_checkers::board::human {
                 return std::visit(utils::overloaded{
                     [&game_data](selected::attack::OutMessage::Selected&& message) -> PlayerMessage::Type {
                         auto new_game_data = game_data;
-                        apply_attack(new_game_data, message._val);
+                        apply_action::attack(new_game_data, message._val);
                         return PlayerMessage::PlayerMadeSelection{new_game_data};
                     },
                     [&form](selected::attack::OutMessage::SelectedOtherChecker&& message) -> PlayerMessage::Type {

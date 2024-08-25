@@ -205,7 +205,7 @@ namespace mcts_checkers::action_collection {
         template<template<typename> typename AllocatorType, typename... MemoryResourceType>
         Output::Type<AllocatorType> determine(
             const GameData& game_data,
-            MemoryResourceType... memory_resources
+            MemoryResourceType&... memory_resources
         ) {
             static_assert(sizeof...(MemoryResourceType) <= 1, "There are must be no memory resource or only one");
 

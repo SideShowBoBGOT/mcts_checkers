@@ -23,7 +23,6 @@ add_library(mcts_checkers
         
         src/mcts_checkers/action_collection_funcs.hpp
         src/mcts_checkers/action_application_funcs.hpp
-        src/mcts_checkers/action_application_funcs.cpp
 
         src/mcts_checkers/board/utils.hpp
         src/mcts_checkers/board/utils.cpp
