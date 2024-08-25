@@ -23,9 +23,9 @@ namespace mcts_checkers::action_collection {
     namespace move {
         template<template<typename> typename AllocatorType>
         struct Output {
-            Output(const CheckerIndex checker_index, const AllocatorType<MoveAction>& allocator)
+            Output(const CheckerIndex checker_index, const AllocatorType<BoardIndex>& allocator)
                 : m_actions{allocator}, m_checker_index{checker_index} {}
-            std::list<MoveAction, AllocatorType<MoveAction>> m_actions;
+            std::list<BoardIndex, AllocatorType<BoardIndex>> m_actions;
             CheckerIndex m_checker_index;
         };
 
@@ -33,7 +33,7 @@ namespace mcts_checkers::action_collection {
         Output<AllocatorType> collect(
             const CheckersData& data,
             const CheckerIndex checker_index,
-            const AllocatorType<MoveAction>& allocator
+            const AllocatorType<BoardIndex>& allocator
         ) {
             assert(data.m_is_in_place[checker_index]);
             const auto checker_vector = convert_checker_index_to_board_vector(checker_index);
@@ -81,7 +81,7 @@ namespace mcts_checkers::action_collection {
 
         template<template<typename> typename AllocatorType>
         struct Output {
-            NodeList<AllocatorType> actions;
+            NodeList<AllocatorType> m_actions;
             CheckerIndex m_checker_index;
             uint64_t depth;
         };
@@ -167,17 +167,24 @@ namespace mcts_checkers::action_collection {
     namespace turn_actions {
 
         namespace allocators {
-            using Move = LinearAllocator<move::Output<LinearAllocator>>;
-            using Attack = LinearAllocator<attack::Output<LinearAllocator>>;
+            template<template<typename> typename AllocatorType>
+            using Move = AllocatorType<move::Output<AllocatorType>>;
+
+            template<template<typename> typename AllocatorType>
+            using Attack = AllocatorType<attack::Output<AllocatorType>>;
         }
 
         namespace Output {
-            using MakeMove = std::list<move::Output<LinearAllocator>, LinearAllocator<move::Output<LinearAllocator>>>;
-            using MakeAttack = std::list<attack::Output<LinearAllocator>, LinearAllocator<attack::Output<LinearAllocator>>>;
+            template<template<typename> typename AllocatorType>
+            using MakeMove = std::list<move::Output<AllocatorType>, AllocatorType<move::Output<AllocatorType>>>;
+
+            template<template<typename> typename AllocatorType>
+            using MakeAttack = std::list<attack::Output<AllocatorType>, AllocatorType<attack::Output<AllocatorType>>>;
             struct DeclareLoss { PlayerIndex m_player_index; };
             struct DeclareDraw {};
 
-            using Type = std::variant<DeclareLoss, DeclareDraw, MakeAttack, MakeMove>;
+            template<template<typename> typename AllocatorType>
+            using Type = std::variant<DeclareLoss, DeclareDraw, MakeAttack<AllocatorType>, MakeMove<AllocatorType>>;
         }
 
         inline bool is_current_player_checker(const GameData& game_data, const CheckerIndex checker_index) {
@@ -195,22 +202,27 @@ namespace mcts_checkers::action_collection {
             }
         }
 
-        inline Output::Type determine(
+        template<template<typename> typename AllocatorType, typename... MemoryResourceType>
+        Output::Type<AllocatorType> determine(
             const GameData& game_data,
-            LinearMemoryResource& memory_resource
+            MemoryResourceType... memory_resources
         ) {
+            static_assert(sizeof...(MemoryResourceType) <= 1, "There are must be no memory resource or only one");
+
             if(game_data.m_moves_count >= MAX_MOVES_COUNT) {
                 return Output::DeclareDraw{};
             }
             {
-                auto attacks = Output::MakeAttack(allocators::Attack(memory_resource));
+                auto attacks = Output::MakeAttack<AllocatorType>(
+                    allocators::Attack<AllocatorType>(memory_resources...)
+                );
                 iterate_over_current_player_checkers(game_data,
-                    [&attacks, &memory_resource](const GameData& game_data, const CheckerIndex checker_index) {
-                        auto collected = collect(
+                    [&attacks, &memory_resources...](const GameData& game_data, const CheckerIndex checker_index) {
+                        auto collected = action_collection::attack::collect(
                             game_data.checkers, checker_index,
-                            LinearAllocator<attack::Node<LinearAllocator>>(memory_resource)
+                            AllocatorType<attack::Node<AllocatorType>>(memory_resources...)
                         );
-                        if(not collected.actions.empty()) {
+                        if(not collected.m_actions.empty()) {
                             attacks.emplace_back(utils::checked_move(collected));
                         }
                     }
@@ -224,16 +236,15 @@ namespace mcts_checkers::action_collection {
                     ), std::end(attacks));
                     return attacks;
                 }
-                memory_resource.deallocate_all();
             }
             {
-                auto moves = Output::MakeMove{allocators::Move(memory_resource)};
+                auto moves = Output::MakeMove<AllocatorType>{allocators::Move<AllocatorType>(memory_resources...)};
                 iterate_over_current_player_checkers(game_data,
-                    [&moves, &memory_resource](const GameData& game_data, const CheckerIndex checker_index) {
+                    [&moves, &memory_resources...](const GameData& game_data, const CheckerIndex checker_index) {
                         auto collected_moves = move::collect(
                             game_data.checkers,
                             checker_index,
-                            LinearAllocator<MoveAction>(memory_resource)
+                            AllocatorType<BoardIndex>(memory_resources...)
                         );
                         if(not collected_moves.m_actions.empty()) {
                             moves.emplace_back(utils::checked_move(collected_moves));
@@ -243,7 +254,6 @@ namespace mcts_checkers::action_collection {
                 if(not moves.empty()) {
                     return moves;
                 }
-                memory_resource.deallocate_all();
             }
             return Output::DeclareLoss{game_data.m_current_player_index};
         }

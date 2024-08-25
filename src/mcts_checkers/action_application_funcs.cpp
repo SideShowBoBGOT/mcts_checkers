@@ -10,19 +10,19 @@ namespace mcts_checkers {
     };
 
 
-    void apply_move(GameData& game_data, const CheckerIndex checker_index, const MoveAction move_action) {
-        const auto move_action_index = convert_board_index_to_checker_index(move_action._val);
+    void apply_move(GameData& game_data, const MoveAction action) {
+        const auto destination_checker_index = convert_board_index_to_checker_index(action.m_destination);
 
-        game_data.checkers.m_is_in_place[checker_index] = false;
-        game_data.checkers.m_is_in_place[move_action_index] = true;
+        game_data.checkers.m_is_in_place[action.m_checker_index] = false;
+        game_data.checkers.m_is_in_place[destination_checker_index] = true;
 
         {
-            const auto y_pos = convert_board_index_to_board_vector(move_action._val).y;
+            const auto y_pos = convert_board_index_to_board_vector(action.m_destination).y;
             const auto is_king_pos = y_pos == KING_Y_POSITIONS[static_cast<uint8_t>(game_data.m_current_player_index)];
-            game_data.checkers.m_is_king[move_action_index] = is_king_pos ? true : game_data.checkers.m_is_king[checker_index];
+            game_data.checkers.m_is_king[destination_checker_index] = is_king_pos ? true : game_data.checkers.m_is_king[action.m_checker_index];
         }
 
-        game_data.checkers.m_player_index[move_action_index] = game_data.checkers.m_player_index[checker_index];
+        game_data.checkers.m_player_index[destination_checker_index] = game_data.checkers.m_player_index[action.m_checker_index];
         game_data.m_current_player_index = opposite_player(game_data.m_current_player_index);
         ++game_data.m_moves_count;
     }
@@ -100,11 +100,16 @@ namespace mcts_checkers {
         checkers.m_player_index[end_checker_index] = checkers.m_player_index[start_checker_index];;
     }
 
-    void apply_attack(GameData& game_data, const std::vector<AttackAction>& attack_actions) {
-        for(size_t i = 0, j = 1; j < attack_actions.size(); ++i, ++j) {
-            apply_attack_step(game_data.checkers, attack_actions[i]._val, attack_actions[j]._val);
+    void apply_attack(GameData& game_data, const AttackAction& action) {
+        apply_attack_step(
+            game_data.checkers,
+            convert_checker_index_to_board_index(action.m_checker_index),
+            action.m_destinations.front()
+        );
+        for(size_t i = 0, j = 1; j < action.m_destinations.size(); ++i, ++j) {
+            apply_attack_step(game_data.checkers, action.m_destinations[i], action.m_destinations[j]);
         }
-        const auto back_board_index = attack_actions.back()._val;
+        const auto back_board_index = action.m_destinations.back();
         const auto back_checker_index = convert_board_index_to_checker_index(back_board_index);
         const auto y_pos = convert_board_index_to_board_vector(back_board_index).y;
         const auto is_king_pos = y_pos == KING_Y_POSITIONS[static_cast<uint8_t>(game_data.m_current_player_index)];

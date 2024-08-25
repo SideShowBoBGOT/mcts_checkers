@@ -11,34 +11,33 @@ namespace mcts_checkers::board::human {
 
     namespace unselected {
         namespace move {
-            struct Form { turn_actions::MakeMove m_actions; };
+            struct Form {
+                action_collection::turn_actions::Output::MakeMove<std::allocator> m_actions;
+            };
         }
 
         namespace attack {
-            struct Form { turn_actions::MakeAttack m_actions; };
+            struct Form {
+                action_collection::turn_actions::Output::MakeAttack<std::allocator> m_actions;
+            };
         }
     }
 
     namespace selected {
         namespace move {
             struct Form {
-                Form(CheckerIndex checker_index, std::vector<std::pair<CheckerIndex, std::vector<MoveAction>>>&& actions);
-                CheckerIndex m_index;
-                std::span<const MoveAction> m_index_actions;
-                std::vector<std::pair<CheckerIndex, std::vector<MoveAction>>> m_actions{};
+                Form(CheckerIndex checker_index, action_collection::turn_actions::Output::MakeMove<std::allocator>&& actions);
+                action_collection::turn_actions::Output::MakeMove<std::allocator> m_actions{};
+                action_collection::turn_actions::Output::MakeMove<std::allocator>::const_iterator m_index_actions;
             };
         }
         namespace attack {
-            struct Node {
-                BoardIndex m_index;
-                std::span<const AttackTree> m_actions;
-            };
-
             struct Form {
-                Form(CheckerIndex index, std::vector<std::pair<CheckerIndex, CollectAttacksResult>>&& actions);
-                CheckerIndex m_index;
-                std::vector<Node> m_index_nodes;
-                std::vector<std::pair<CheckerIndex, CollectAttacksResult>> m_actions{};
+                Form(CheckerIndex index, action_collection::turn_actions::Output::MakeAttack<std::allocator>&& actions);
+                action_collection::turn_actions::Output::MakeAttack<std::allocator> m_actions{};
+                decltype(m_actions)::const_iterator m_index_actions;
+                std::vector<decltype(decltype(m_actions)::value_type::m_actions)::const_iterator> m_selected_actions{};
+
             };
         }
     }

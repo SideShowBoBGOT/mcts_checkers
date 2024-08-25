@@ -10,10 +10,10 @@ find_package(fmt REQUIRED)
 
 add_library(mcts_checkers
         src/mcts_checkers/utils.hpp
-#        src/mcts_checkers/statistic_form.hpp
-#        src/mcts_checkers/statistic_form.cpp
-#        src/mcts_checkers/main_form.hpp
-#        src/mcts_checkers/main_form.cpp
+        src/mcts_checkers/statistic_form.hpp
+        src/mcts_checkers/statistic_form.cpp
+        src/mcts_checkers/main_form.hpp
+        src/mcts_checkers/main_form.cpp
         src/mcts_checkers/index_converters.hpp
         src/mcts_checkers/checkers_data.hpp
         src/mcts_checkers/checkers_data.cpp
@@ -25,15 +25,15 @@ add_library(mcts_checkers
         src/mcts_checkers/action_application_funcs.hpp
         src/mcts_checkers/action_application_funcs.cpp
 
-#        src/mcts_checkers/board/utils.hpp
-#        src/mcts_checkers/board/utils.cpp
-#        src/mcts_checkers/board/form.hpp
-#        src/mcts_checkers/board/form.cpp
-#
-#        src/mcts_checkers/board/human_form.hpp
-#        src/mcts_checkers/board/human_form.cpp
-#        src/mcts_checkers/board/ai_form.hpp
-#        src/mcts_checkers/board/ai_form.cpp
+        src/mcts_checkers/board/utils.hpp
+        src/mcts_checkers/board/utils.cpp
+        src/mcts_checkers/board/form.hpp
+        src/mcts_checkers/board/form.cpp
+
+        src/mcts_checkers/board/human_form.hpp
+        src/mcts_checkers/board/human_form.cpp
+        src/mcts_checkers/board/ai_form.hpp
+        src/mcts_checkers/board/ai_form.cpp
         src/mcts_checkers/allocators.hpp
 )
 target_include_directories(mcts_checkers PUBLIC src)

@@ -5,19 +5,19 @@ namespace mcts_checkers::board {
 
     namespace {
 
-        constexpr ImVec2 convert_board_vector_to_imvec(const BoardVector board_index) {
-            return ImVec2{
-                static_cast<float>(board_index.x),
-                static_cast<float>(board_index.y)
-            };
-        }
-
-        constexpr BoardVector convert_imvec_to_board_vector(const ImVec2 imvec) {
-            return BoardVector{
-                static_cast<uint8_t>(imvec.x),
-                static_cast<uint8_t>(imvec.y)
-            };
-        }
+        // constexpr ImVec2 convert_board_vector_to_imvec(const BoardVector board_index) {
+        //     return ImVec2{
+        //         static_cast<float>(board_index.x),
+        //         static_cast<float>(board_index.y)
+        //     };
+        // }
+        //
+        // constexpr BoardVector convert_imvec_to_board_vector(const ImVec2 imvec) {
+        //     return BoardVector{
+        //         static_cast<uint8_t>(imvec.x),
+        //         static_cast<uint8_t>(imvec.y)
+        //     };
+        // }
 
         void draw_rects() {
             const auto draw_list = ImGui::GetWindowDrawList();

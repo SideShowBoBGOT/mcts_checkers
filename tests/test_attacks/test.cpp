@@ -101,6 +101,6 @@ TEST(TestAttacks, Sanity) {
         );
         ASSERT_EQ(result.depth, test_data.result.depth);
         ASSERT_EQ(result.m_checker_index, test_data.result.m_checker_index);
-        validate_actions_equal(result.actions, test_data.result.actions);
+        validate_actions_equal(result.m_actions, test_data.result.m_actions);
     }
 }

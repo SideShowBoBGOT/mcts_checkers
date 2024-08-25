@@ -8,7 +8,7 @@ namespace mcts_checkers::board::ai {
 
     struct Initial {};
     struct Active {
-        Active(const GameData& game_data);
+        explicit Active(const GameData& game_data);
         std::future<PlayerMessage::Type> m_task;
     };
 

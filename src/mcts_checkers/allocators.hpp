@@ -4,41 +4,44 @@
 
 namespace mcts_checkers {
 
-    class LinearMemoryResource {
+    class MonotonicMemoryResource {
         public:
-            LinearMemoryResource()=default;
-            explicit LinearMemoryResource(const std::span<std::byte>& storage)
+            MonotonicMemoryResource()=default;
+            explicit MonotonicMemoryResource(const std::span<std::byte>& storage)
                 : m_storage(storage) {}
             std::byte* allocate(const std::size_t n) {
                 const auto result = &m_storage[m_used];
                 m_used += n;
                 return result;
             }
-            constexpr void deallocate_all() noexcept { m_used = 0; }
+            constexpr void release() noexcept { m_used = 0; }
         private:
             std::span<std::byte> m_storage{};
             std::size_t m_used = 0;
     };
 
     template <typename T>
-    class LinearAllocator {
+    class MonotonicAllocator {
         public:
             using value_type = T;
             using size_type = std::size_t;
             using difference_type = std::ptrdiff_t;
             using propagate_on_container_move_assignment = std::true_type;
 
+            template<typename U>
+            friend class MonotonicAllocator;
+
             template <typename U>
                 struct rebind {
-                using other = LinearAllocator<U>;
+                using other = MonotonicAllocator<U>;
             };
 
-            LinearAllocator() noexcept = default;
-            explicit LinearAllocator(LinearMemoryResource& memory_resource) noexcept
+            MonotonicAllocator() noexcept = default;
+            explicit MonotonicAllocator(MonotonicMemoryResource& memory_resource) noexcept
                 : m_memory_resource(&memory_resource) {}
 
             template <typename U>
-            explicit LinearAllocator(const LinearAllocator<U>& l) noexcept
+            explicit MonotonicAllocator(const MonotonicAllocator<U>& l) noexcept
                 : m_memory_resource(l.m_memory_resource) {}
 
             T* allocate(const std::size_t n) {
@@ -46,8 +49,8 @@ namespace mcts_checkers {
                 return result;
             }
             static constexpr void deallocate(T*, const std::size_t) noexcept {}
-        public:
-            LinearMemoryResource* m_memory_resource = nullptr;
+        private:
+            MonotonicMemoryResource* m_memory_resource = nullptr;
     };
 
 
