@@ -26,21 +26,28 @@ namespace mcts_checkers::apply_action {
         };
     }
 
-    inline void move(GameData& game_data, const Move action) {
-        const auto destination_checker_index = convert_board_index_to_checker_index(action.m_destination);
+    inline void move(GameData& game_data,
+        CheckerIndex checker_index,
+        BoardIndex destination
+    ) {
+        const auto destination_checker_index = convert_board_index_to_checker_index(destination);
 
-        game_data.checkers.m_is_in_place[action.m_checker_index] = false;
+        game_data.checkers.m_is_in_place[checker_index] = false;
         game_data.checkers.m_is_in_place[destination_checker_index] = true;
 
         {
-            const auto y_pos = convert_board_index_to_board_vector(action.m_destination).y;
+            const auto y_pos = convert_board_index_to_board_vector(destination).y;
             const auto is_king_pos = y_pos == detail::KING_Y_POSITIONS[static_cast<uint8_t>(game_data.m_current_player_index)];
-            game_data.checkers.m_is_king[destination_checker_index] = is_king_pos ? true : game_data.checkers.m_is_king[action.m_checker_index];
+            game_data.checkers.m_is_king[destination_checker_index] = is_king_pos ? true : game_data.checkers.m_is_king[checker_index];
         }
 
-        game_data.checkers.m_player_index[destination_checker_index] = game_data.checkers.m_player_index[action.m_checker_index];
+        game_data.checkers.m_player_index[destination_checker_index] = game_data.checkers.m_player_index[checker_index];
         game_data.m_current_player_index = opposite_player(game_data.m_current_player_index);
         ++game_data.m_moves_count;
+    }
+
+    inline void move(GameData& game_data, const Move action) {
+        return move(game_data, action.m_checker_index, action.m_destination);
     }
 
     namespace detail {
@@ -120,16 +127,19 @@ namespace mcts_checkers::apply_action {
 
 
     template<template<typename> class AllocatorType>
-    void attack(GameData& game_data, const Attack<AllocatorType>& action) {
+    void attack(GameData& game_data,
+        const CheckerIndex checker_index,
+        const std::vector<BoardIndex, AllocatorType<BoardIndex>>& destinations
+    ) {
         detail::apply_attack_step(
             game_data.checkers,
-            convert_checker_index_to_board_index(action.m_checker_index),
-            action.m_destinations.front()
+            convert_checker_index_to_board_index(checker_index),
+            destinations.front()
         );
-        for(size_t i = 0, j = 1; j < action.m_destinations.size(); ++i, ++j) {
-            detail::apply_attack_step(game_data.checkers, action.m_destinations[i], action.m_destinations[j]);
+        for(size_t i = 0, j = 1; j < destinations.size(); ++i, ++j) {
+            detail::apply_attack_step(game_data.checkers, destinations[i], destinations[j]);
         }
-        const auto back_board_index = action.m_destinations.back();
+        const auto back_board_index = destinations.back();
         const auto back_checker_index = convert_board_index_to_checker_index(back_board_index);
         const auto y_pos = convert_board_index_to_board_vector(back_board_index).y;
         const auto is_king_pos = y_pos == detail::KING_Y_POSITIONS[static_cast<uint8_t>(game_data.m_current_player_index)];
@@ -137,5 +147,10 @@ namespace mcts_checkers::apply_action {
 
         game_data.m_current_player_index = opposite_player(game_data.m_current_player_index);
         game_data.m_moves_count = UninterruptedMovesCount{0};
+    }
+
+    template<template<typename> class AllocatorType>
+    void attack(GameData& game_data, const Attack<AllocatorType>& action) {
+        return attack(game_data, action.m_checker_index, action.m_destinations);
     }
 }

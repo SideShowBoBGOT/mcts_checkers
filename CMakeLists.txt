@@ -46,13 +46,19 @@ target_link_libraries(mcts_checkers
         fmt::fmt
         strong_type::strong_type
 )
-
 target_compile_options(mcts_checkers PRIVATE -Wall -Wextra)
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    target_compile_options(mcts_checkers PRIVATE -O3)
+endif()
 #target_compile_options(mcts_checkers PRIVATE -Werror)
 
 add_executable(main_mcts_checkers main.cpp)
 target_link_libraries(main_mcts_checkers PUBLIC mcts_checkers)
 target_compile_options(main_mcts_checkers PRIVATE -Wall -Wextra)
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    target_compile_options(main_mcts_checkers PRIVATE -Ofast)
+endif()
+
 
 add_subdirectory(tests)
 

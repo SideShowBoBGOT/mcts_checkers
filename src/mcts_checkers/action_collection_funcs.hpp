@@ -207,7 +207,6 @@ namespace mcts_checkers::action_collection {
             const GameData& game_data,
             MemoryResourceType&... memory_resources
         ) {
-            static_assert(sizeof...(MemoryResourceType) <= 1, "There are must be no memory resource or only one");
 
             if(game_data.m_moves_count >= MAX_MOVES_COUNT) {
                 return Output::DeclareDraw{};

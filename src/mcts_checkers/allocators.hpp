@@ -15,6 +15,7 @@ namespace mcts_checkers {
                 return result;
             }
             constexpr void release() noexcept { m_used = 0; }
+            [[nodiscard]] constexpr std::size_t used() const noexcept { return m_used; }
         private:
             std::span<std::byte> m_storage{};
             std::size_t m_used = 0;
