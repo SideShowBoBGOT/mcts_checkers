@@ -48,7 +48,7 @@ target_link_libraries(mcts_checkers
 )
 target_compile_options(mcts_checkers PRIVATE -Wall -Wextra)
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
-    target_compile_options(mcts_checkers PRIVATE -O3)
+    target_compile_options(mcts_checkers PRIVATE -O3 -Werror)
 endif()
 #target_compile_options(mcts_checkers PRIVATE -Werror)
 

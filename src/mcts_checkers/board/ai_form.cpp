@@ -69,7 +69,7 @@ namespace mcts_checkers::board::ai {
                 return {checker_actions.m_checker_index, utils::checked_move(chain)};
             }
 
-            PlayerMessage::Type calculate_move(const GameData& game_data, MonotonicMemoryResource& memory_resource) {
+            [[maybe_unused]] PlayerMessage::Type calculate_move(const GameData& game_data, MonotonicMemoryResource& memory_resource) {
                 auto generator = std::default_random_engine(std::chrono::system_clock::now().time_since_epoch().count());
                 return std::visit(utils::overloaded{
                     [](const action_collection::turn_actions::Output::DeclareLoss message) -> PlayerMessage::Type {
@@ -288,7 +288,7 @@ namespace mcts_checkers::board::ai {
             [game_data_c = game_data]() -> PlayerMessage::Type {
                 static auto ACTION_MEMORY_RESOURCE_BUFFER = std::vector<std::byte>(1024 * 60);
                 static auto ACTION_MEMORY_RESOURCE = MonotonicMemoryResource(ACTION_MEMORY_RESOURCE_BUFFER);
-                static auto TREE_MEMORY_RESOURCE_BUFFER = std::vector<std::byte>(std::pow(1024, 3));
+                static auto TREE_MEMORY_RESOURCE_BUFFER = std::vector<std::byte>(static_cast<size_t>(std::pow(1024, 3)));
                 static auto TREE_MEMORY_RESOURCE = MonotonicMemoryResource(TREE_MEMORY_RESOURCE_BUFFER);
                 return mcts::calculate_move(game_data_c, ACTION_MEMORY_RESOURCE, TREE_MEMORY_RESOURCE);
             }

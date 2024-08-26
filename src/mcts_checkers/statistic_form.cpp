@@ -14,16 +14,12 @@ namespace mcts_checkers::statistic {
                 return "";
             },
             [](const ShowWin message) {
-                switch(message.m_player_index) {
-                    case PlayerIndex::FIRST: return "First player won!";
-                    case PlayerIndex::SECOND: return "Second player won!";
-                }
+                return message.m_player_index == PlayerIndex::FIRST ?
+                    "First player won!" : "Second player won!";
             },
             [](const ShowMakingDecision message) {
-                switch(message.m_player_index) {
-                    case PlayerIndex::FIRST: return "First player is making decision";
-                    case PlayerIndex::SECOND: return "Second player is making decision!";
-                }
+                return message.m_player_index == PlayerIndex::FIRST ?
+                    "First player is making decision" : "Second player is making decision!";
             },
             [](const ShowDraw) {
                 return "Draw";
@@ -32,13 +28,13 @@ namespace mcts_checkers::statistic {
         );
     }
 
-    Message iter_out(const Form& stat, InputMessage input_message) {
+    Message iter_out(const Form&, InputMessage input_message) {
         ImGui::BeginChild("StatisticForm", ImVec2(FORM_WIDTH, -1), true);
         ON_SCOPE_EXIT {
             ImGui::EndChild();
         };
 
-        ImGui::Text(detrmine_status_message(input_message).data());
+        ImGui::Text("%s", detrmine_status_message(input_message).data());
 
         ImGui::NewLine();
 
