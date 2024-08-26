@@ -15,27 +15,25 @@ add_library(mcts_checkers
         src/mcts_checkers/main_form.hpp
         src/mcts_checkers/main_form.cpp
         src/mcts_checkers/index_converters.hpp
-        src/mcts_checkers/checkers_types.hpp
         src/mcts_checkers/checkers_data.hpp
         src/mcts_checkers/checkers_data.cpp
 
-        # src/mcts_checkers/board_form.hpp
-        # src/mcts_checkers/board_form.cpp
+#         src/mcts_checkers/board_form.hpp
+#         src/mcts_checkers/board_form.cpp
         
         src/mcts_checkers/action_collection_funcs.hpp
-        src/mcts_checkers/action_collection_funcs.cpp
         src/mcts_checkers/action_application_funcs.hpp
-        src/mcts_checkers/action_application_funcs.cpp
 
         src/mcts_checkers/board/utils.hpp
         src/mcts_checkers/board/utils.cpp
         src/mcts_checkers/board/form.hpp
         src/mcts_checkers/board/form.cpp
 
-        src/mcts_checkers/board/human/form.hpp
-        src/mcts_checkers/board/human/form.cpp
-        src/mcts_checkers/board/ai/form.hpp
-        src/mcts_checkers/board/ai/form.cpp
+        src/mcts_checkers/board/human_form.hpp
+        src/mcts_checkers/board/human_form.cpp
+        src/mcts_checkers/board/ai_form.hpp
+        src/mcts_checkers/board/ai_form.cpp
+        src/mcts_checkers/allocators.hpp
 )
 target_include_directories(mcts_checkers PUBLIC src)
 target_link_libraries(mcts_checkers
@@ -48,13 +46,19 @@ target_link_libraries(mcts_checkers
         fmt::fmt
         strong_type::strong_type
 )
-
 target_compile_options(mcts_checkers PRIVATE -Wall -Wextra)
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    target_compile_options(mcts_checkers PRIVATE -O3)
+endif()
 #target_compile_options(mcts_checkers PRIVATE -Werror)
 
 add_executable(main_mcts_checkers main.cpp)
 target_link_libraries(main_mcts_checkers PUBLIC mcts_checkers)
 target_compile_options(main_mcts_checkers PRIVATE -Wall -Wextra)
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    target_compile_options(main_mcts_checkers PRIVATE -Ofast)
+endif()
+
 
 add_subdirectory(tests)
 

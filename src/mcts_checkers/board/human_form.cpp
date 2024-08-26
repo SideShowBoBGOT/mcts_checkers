@@ -1,4 +1,4 @@
-#include <mcts_checkers/board/human/form.hpp>
+#include <mcts_checkers/board/human_form.hpp>
 #include <mcts_checkers/utils.hpp>
 #include <mcts_checkers/index_converters.hpp>
 #include <mcts_checkers/action_application_funcs.hpp>
@@ -15,8 +15,12 @@ namespace mcts_checkers::board::human {
     namespace initial {
         namespace {
             namespace OutMessage {
-                struct TransitionToUnselectedMove { turn_actions::MakeMove m_actions; };
-                struct TransitionToUnselectedAttack { turn_actions::MakeAttack m_actions; };
+                struct TransitionToUnselectedMove {
+                    action_collection::turn_actions::Output::MakeMove<std::allocator> m_actions;
+                };
+                struct TransitionToUnselectedAttack {
+                    action_collection::turn_actions::Output::MakeAttack<std::allocator> m_actions;
+                };
                 struct DeclareLoss { PlayerIndex m_player_index; };
                 struct DeclareDraw {};
 
@@ -30,19 +34,19 @@ namespace mcts_checkers::board::human {
 
             OutMessage::Type iter(const GameData& game_data) {
                 return std::visit(utils::overloaded{
-                    [](turn_actions::MakeMove&& actions) -> OutMessage::Type {
+                    [](action_collection::turn_actions::Output::MakeMove<std::allocator>&& actions) -> OutMessage::Type {
                         return OutMessage::TransitionToUnselectedMove{utils::checked_move(actions)};
                     },
-                    [](turn_actions::MakeAttack&& actions) -> OutMessage::Type {
+                    [](action_collection::turn_actions::Output::MakeAttack<std::allocator>&& actions) -> OutMessage::Type {
                         return OutMessage::TransitionToUnselectedAttack{utils::checked_move(actions)};
                     },
-                    [](const turn_actions::DeclareLoss actions) -> OutMessage::Type {
+                    [](const action_collection::turn_actions::Output::DeclareLoss actions) -> OutMessage::Type {
                         return OutMessage::DeclareLoss{actions.m_player_index};
                     },
-                    [](const turn_actions::DeclareDraw) -> OutMessage::Type {
+                    [](const action_collection::turn_actions::Output::DeclareDraw) -> OutMessage::Type {
                         return OutMessage::DeclareDraw{};
                     }
-                }, turn_actions::determine(game_data));
+                }, action_collection::turn_actions::determine<std::allocator>(game_data));
             }
 
         }
@@ -93,9 +97,9 @@ namespace mcts_checkers::board::human {
         namespace unselected_selected_common {
 
             template<typename ActionsType>
-            void draw_action_cells(const std::vector<std::pair<CheckerIndex, ActionsType>>& actions) {
+            void draw_action_cells(const std::list<ActionsType>& actions) {
                 for(const auto& el : actions) {
-                    draw_hovered_cell(convert_checker_index_to_board_vector(el.first), PURPLE_BLUE_COLOR);
+                    draw_hovered_cell(convert_checker_index_to_board_vector(el.m_checker_index), PURPLE_BLUE_COLOR);
                 }
             }
 
@@ -107,7 +111,7 @@ namespace mcts_checkers::board::human {
                 if(const auto checker_index_opt = try_convert_board_vector_to_checker_index(checker_board_vector)) {
                     const auto checker_index = *checker_index_opt;
                     const auto it = std::find_if(std::begin(form.m_actions), std::end(form.m_actions),
-                        [checker_index](const auto& el) { return el.first == checker_index; });
+                        [checker_index](const auto& el) { return el.m_checker_index == checker_index; });
                     if(it != std::end(form.m_actions)) {
                         draw_hovered_cell(checker_board_vector, GREEN_COLOR);
                         if(ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
@@ -131,7 +135,7 @@ namespace mcts_checkers::board::human {
                     struct NotSelected {};
                     struct Selected {
                         CheckerIndex m_index;
-                        turn_actions::MakeMove m_actions;
+                        action_collection::turn_actions::Output::MakeMove<std::allocator> m_actions;
                     };
 
                     using Type = std::variant<NotSelected, Selected>;
@@ -156,7 +160,7 @@ namespace mcts_checkers::board::human {
                     struct NotSelected {};
                     struct Selected {
                         CheckerIndex m_index;
-                        turn_actions::MakeAttack m_actions;
+                        action_collection::turn_actions::Output::MakeAttack<std::allocator> m_actions;
                     };
 
                     using Type = std::variant<NotSelected, Selected>;
@@ -179,13 +183,13 @@ namespace mcts_checkers::board::human {
 
         namespace {
 
-            template<typename ActionsType>
+            template<typename OutputType>
             auto find_checker_actions(
                 const CheckerIndex checker_index,
-                const std::vector<std::pair<CheckerIndex, ActionsType>>& actions
-            ) -> typename std::vector<std::pair<CheckerIndex, ActionsType>>::const_iterator {
+                const OutputType& actions
+            ) {
                 const auto it = std::find_if(std::begin(actions), std::end(actions),
-                    [checker_index](const auto& el) { return el.first == checker_index; }
+                    [checker_index](const auto& el) { return el.m_checker_index == checker_index; }
                 );
                 assert(it != std::end(actions) && "No actions found for checker index");
                 return it;
@@ -209,23 +213,17 @@ namespace mcts_checkers::board::human {
         }
 
         namespace move {
-            Form::Form(const CheckerIndex checker_index, turn_actions::MakeMove&& actions)
-                : m_index{checker_index}, m_actions{utils::checked_move(actions)} {
-                const auto it = find_checker_actions(checker_index, m_actions);
-                m_index_actions = std::span{it->second};
-            }
+            Form::Form(const CheckerIndex checker_index, action_collection::turn_actions::Output::MakeMove<std::allocator>&& actions)
+                : m_actions{utils::checked_move(actions)}, m_index_actions{find_checker_actions(checker_index, m_actions)} {}
 
             namespace {
                 
                 namespace OutMessage {
                     struct StateNotChange {};
-                    struct Selected {
-                        MoveAction m_data;
-                        CheckerIndex m_index;
-                    };
+                    using Selected = strong::type<apply_action::Move, struct Selected_>;
                     struct SelectedOtherChecker {
                         CheckerIndex m_index;
-                        turn_actions::MakeMove m_actions;
+                        action_collection::turn_actions::Output::MakeMove<std::allocator> m_actions;
                     };
                     using Type = std::variant<
                         StateNotChange,
@@ -236,22 +234,24 @@ namespace mcts_checkers::board::human {
 
                 OutMessage::Type iter(Form& form) {
                     unselected_selected_common::draw_action_cells(form.m_actions);
-                    for(const auto& action : form.m_index_actions) {
-                        selected::draw_action_rect(action._val, PURPLE_COLOR);
+                    for(const auto& action : form.m_index_actions->m_actions) {
+                        draw_action_rect(action, PURPLE_COLOR);
                     }
-                    draw_hovered_cell(form.m_index, BLUE_COLOR);
+                    draw_hovered_cell(form.m_index_actions->m_checker_index, BLUE_COLOR);
 
                     if(ImGui::IsWindowHovered(ImGuiHoveredFlags_None)) {
-                        const auto checker_board_vector = calc_hovered_cell();
-                        const auto checker_board_index = convert_board_vector_to_board_index(checker_board_vector);
-                        const auto it = std::find_if(std::begin(form.m_index_actions), std::end(form.m_index_actions),
-                        [checker_board_index](const MoveAction action) { return action._val == checker_board_index; });
-                        if(it != std::end(form.m_index_actions)) {
-                            draw_hovered_cell(checker_board_vector, PURPLE_COLOR);
+                        const auto destination_board_vector = calc_hovered_cell();
+                        const auto destination_board_index = convert_board_vector_to_board_index(destination_board_vector);
+                        const auto it = std::ranges::find_if(form.m_index_actions->m_actions,
+                            [destination_board_index](const BoardIndex destination) {
+                                return destination == destination_board_index;
+                            }
+                        );
+                        if(it != std::end(form.m_index_actions->m_actions)) {
+                            draw_hovered_cell(destination_board_vector, PURPLE_COLOR);
                             if(ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
                                 return OutMessage::Selected{
-                                    MoveAction{checker_board_index},
-                                    form.m_index
+                                    apply_action::Move{form.m_index_actions->m_checker_index, destination_board_index}
                                 };
                             }
                         } else {
@@ -264,22 +264,18 @@ namespace mcts_checkers::board::human {
                 }
             }
         }
+
         namespace attack {
-            Form::Form(const CheckerIndex checker_index, std::vector<std::pair<CheckerIndex, CollectAttacksResult>>&& actions)
-                : m_index{checker_index}, m_actions{utils::checked_move(actions)} {
-                const auto it = find_checker_actions(checker_index, m_actions);
-                m_index_nodes.emplace_back(convert_checker_index_to_board_index(checker_index), it->second.actions);
-            }
+            Form::Form(const CheckerIndex checker_index, action_collection::turn_actions::Output::MakeAttack<std::allocator>&& actions)
+                : m_actions{utils::checked_move(actions)}, m_index_actions{find_checker_actions(checker_index, m_actions)} {}
 
             namespace {
                 namespace OutMessage {
                     struct StateNotChange {};
-                    struct Selected {
-                        std::vector<AttackAction> m_data;
-                    };
+                    using Selected = strong::type<apply_action::Attack<std::allocator>, struct Selected_>;
                     struct SelectedOtherChecker {
                         CheckerIndex m_index;
-                        turn_actions::MakeAttack m_actions;
+                        action_collection::turn_actions::Output::MakeAttack<std::allocator> m_actions;
                     };
                     using Type = std::variant<
                         StateNotChange,
@@ -290,41 +286,45 @@ namespace mcts_checkers::board::human {
 
                 OutMessage::Type iter(Form& form) {
                     unselected_selected_common::draw_action_cells(form.m_actions);
-                    for(const auto& node : form.m_index_nodes | std::views::drop(1)) {
-                        selected::draw_action_rect(node.m_index, RED_COLOR);
+                    for(const auto& node : form.m_selected_actions) {
+                        draw_action_rect(node->m_board_index, RED_COLOR);
                     }
-                    for(const auto& action : form.m_index_nodes.back().m_actions) {
-                        selected::draw_action_rect(action.m_board_index, PINK_COLOR);
+                    const auto& actions_list = form.m_selected_actions.empty() ?
+                        form.m_index_actions->m_actions : form.m_selected_actions.back()->m_child_trees;
+                    for(const auto& action : actions_list) {
+                        draw_action_rect(action.m_board_index, PINK_COLOR);
                     }
-                    draw_hovered_cell(form.m_index, BLUE_COLOR);
+                    draw_hovered_cell(form.m_index_actions->m_checker_index, BLUE_COLOR);
+
                     if(is_window_hovered()) {
                         if(ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
-                            if(form.m_index_nodes.size() > 1) {
-                                form.m_index_nodes.pop_back();
+                            if(not form.m_selected_actions.empty()) {
+                                form.m_selected_actions.pop_back();
                             }
                         }
 
                         const auto checker_board_vector = calc_hovered_cell();
-                        const auto& last_node = form.m_index_nodes.back();
-                        const auto it = std::find_if(std::begin(last_node.m_actions), std::end(last_node.m_actions),
-                            [index=convert_board_vector_to_board_index(checker_board_vector)](const AttackTree& action) {
+                        const auto it = std::ranges::find_if(actions_list,
+                            [index=convert_board_vector_to_board_index(checker_board_vector)]
+                            (const action_collection::attack::Node<std::allocator>& action) {
                                 return action.m_board_index == index;
-                            });
-                        if(it != std::end(last_node.m_actions)) {
+                            }
+                        );
+                        if(it != std::end(actions_list)) {
                             draw_hovered_cell(checker_board_vector, PINK_COLOR);
                             if(ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
-                                form.m_index_nodes.emplace_back(it->m_board_index, it->m_child_trees);
-                                if(it->m_child_trees.empty()) {
-                                    auto actions = form.m_index_nodes
-                                        | ranges::views::transform(
-                                            [index=convert_checker_index_to_board_index(form.m_index)]
-                                            (const selected::attack::Node& node) {
-                                                return AttackAction{node.m_index};
-                                            })
-                                        | ranges::to_vector;
 
-                                    assert(not actions.empty() && "Actions can not be empty");
-                                    return OutMessage::Selected{utils::checked_move(actions)};
+                                form.m_selected_actions.emplace_back(it);
+                                if(it->m_child_trees.empty()) {
+                                    assert(not form.m_selected_actions.empty() && "Actions can not be empty");
+                                    auto actions = std::vector<BoardIndex>();
+                                    actions.reserve(form.m_selected_actions.size());
+                                    for(const auto& node : form.m_selected_actions) {
+                                        actions.emplace_back(node->m_board_index);
+                                    }
+                                    return OutMessage::Selected{apply_action::Attack<std::allocator>(
+                                        form.m_index_actions->m_checker_index, utils::checked_move(actions)
+                                    )};
                                 }
                                 return OutMessage::StateNotChange{};
                             }
@@ -386,7 +386,7 @@ namespace mcts_checkers::board::human {
                 return std::visit(utils::overloaded{
                     [&game_data](selected::move::OutMessage::Selected&& message) -> PlayerMessage::Type {
                         auto new_game_data = game_data;
-                        apply_move(new_game_data, message.m_index, message.m_data);
+                        apply_action::move(new_game_data, message._val);
                         return PlayerMessage::PlayerMadeSelection{new_game_data};
                     },
                     [&form](selected::move::OutMessage::SelectedOtherChecker&& message) -> PlayerMessage::Type {
@@ -402,7 +402,7 @@ namespace mcts_checkers::board::human {
                 return std::visit(utils::overloaded{
                     [&game_data](selected::attack::OutMessage::Selected&& message) -> PlayerMessage::Type {
                         auto new_game_data = game_data;
-                        apply_attack(new_game_data, message.m_data);
+                        apply_action::attack(new_game_data, message._val);
                         return PlayerMessage::PlayerMadeSelection{new_game_data};
                     },
                     [&form](selected::attack::OutMessage::SelectedOtherChecker&& message) -> PlayerMessage::Type {

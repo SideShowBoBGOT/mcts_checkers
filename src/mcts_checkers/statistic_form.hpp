@@ -1,6 +1,6 @@
 #pragma once
 #include <variant>
-#include <mcts_checkers/checkers_types.hpp>
+#include <mcts_checkers/checkers_data.hpp>
 
 namespace mcts_checkers::statistic {
 

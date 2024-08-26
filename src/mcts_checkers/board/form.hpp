@@ -2,8 +2,8 @@
 
 #include <variant>
 #include <mcts_checkers/checkers_data.hpp>
-#include <mcts_checkers/board/human/form.hpp>
-#include <mcts_checkers/board/ai/form.hpp>
+#include <mcts_checkers/board/human_form.hpp>
+#include <mcts_checkers/board/ai_form.hpp>
 
 
 namespace mcts_checkers::board {
